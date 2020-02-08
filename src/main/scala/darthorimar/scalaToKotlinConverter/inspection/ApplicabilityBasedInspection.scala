@@ -13,10 +13,11 @@ class ApplicabilityBasedInspection[Elem <: KtElement](val inspection: AbstractAp
                             project: Project,
                             file: PsiFile,
                             diagnostics: Diagnostics): Option[Fix] = {
-    def isStillAvalable: Boolean =
-      element.getClass == elementType && inspection.isApplicable(element.asInstanceOf[Elem])
+    val elem = element.asInstanceOf[Elem]
+    def isStillAvailable: Boolean =
+      element.getClass == elementType && inspection.isApplicable(elem)
 
-    if (isStillAvalable) Some(Fix(() => if (isStillAvalable) inspection.applyTo(element, project, null)))
+    if (isStillAvailable) Some(Fix(() => if (isStillAvailable) inspection.applyTo(elem, project, null)))
     else None
   }
 

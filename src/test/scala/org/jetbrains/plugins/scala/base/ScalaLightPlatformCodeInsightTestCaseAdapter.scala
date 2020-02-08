@@ -69,23 +69,23 @@ abstract class ScalaLightPlatformCodeInsightTestCaseAdapter extends LightPlatfor
 
   protected def additionalLibraries: Seq[LibraryLoader] = Vector.empty
 
-  protected def getVFileAdapter: VirtualFile = LightPlatformCodeInsightTestCase.getVFile
+  protected def getVFileAdapter: VirtualFile = getVFile
 
-  protected def getEditorAdapter: Editor = LightPlatformCodeInsightTestCase.getEditor
+  protected def getEditorAdapter: Editor = getEditor
 
   protected def getProjectAdapter: Project = getProject
 
   protected def getModuleAdapter: Module = getModule
 
-  protected def getFileAdapter: PsiFile = LightPlatformCodeInsightTestCase.getFile
+  protected def getFileAdapter: PsiFile = getFile
 
   protected def getPsiManagerAdapter: PsiManager = getPsiManager
 
-  protected def getCurrentEditorDataContextAdapter: DataContext = LightPlatformCodeInsightTestCase.getCurrentEditorDataContext
+  protected def getCurrentEditorDataContextAdapter: DataContext = getCurrentEditorDataContext
 
-  protected def executeActionAdapter(actionId: String): Unit = LightPlatformCodeInsightTestCase.executeAction(actionId)
+  protected def executeActionAdapter(actionId: String): Unit = executeAction(actionId)
 
-  protected def configureFromFileTextAdapter(fileName: String, fileText: String): Unit = LightPlatformCodeInsightTestCase.configureFromFileText(fileName, StringUtil.convertLineSeparators(fileText))
+  protected def configureFromFileTextAdapter(fileName: String, fileText: String): Unit = configureFromFileText(fileName, StringUtil.convertLineSeparators(fileText))
 
   @throws(classOf[Exception])
   override protected def tearDown(): Unit = try {

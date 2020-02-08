@@ -3,7 +3,6 @@ package darthorimar.scalaToKotlinConverter
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFileFactory
-import com.intellij.testFramework.LightPlatformTestCase
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.{KtFile, KtPsiFactory}
 import org.jetbrains.plugins.scala.base.ScalaLightPlatformCodeInsightTestCaseAdapter
@@ -16,7 +15,7 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
   private def formatKotlinCode(unformattedCode: String): String = {
     // convert all line separators to "\n"
     val codeWithUnifiedLineSeparators = StringUtil.convertLineSeparators(unformattedCode)
-    val ktPsiFactory = new KtPsiFactory(LightPlatformTestCase.getProject)
+    val ktPsiFactory = new KtPsiFactory(getProject)
     val ktFile = ktPsiFactory.createFile(codeWithUnifiedLineSeparators)
     Utils.reformatKtElement(ktFile)
     ktFile.getText.trim.split('\n').filterNot(_.isEmpty).mkString("\n")

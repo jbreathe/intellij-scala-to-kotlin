@@ -40,7 +40,7 @@ object Inspection {
           {
             val fix = new AddExclExclCallFix(element)
 
-            def isStillAvalable = diagnostic match {
+            def isStillAvailable = diagnostic match {
               case d: DiagnosticWithParameters2[_, ktTypes.KotlinType, ktTypes.KotlinType]
                   if TypeUtils.isNullableType(d.getA) != TypeUtils.isNullableType(d.getB) &&
                     d.getA.unwrap.toString.stripSuffix("?") == d.getB.unwrap.toString.stripSuffix("?") =>
@@ -48,7 +48,7 @@ object Inspection {
               case _ => false
             }
 
-            if (isStillAvalable) Some(() => if (isStillAvalable) fix.invoke(project, null, file))
+            if (isStillAvailable) Some(() => if (isStillAvailable) fix.invoke(project, null, file))
             else None
           }
       }
@@ -59,10 +59,10 @@ object Inspection {
         else {
           val fix = new ReplaceWithSafeCallFix(element.asInstanceOf[KtDotQualifiedExpression], true)
 
-          def isStillAvalable =
+          def isStillAvailable =
             fix.isAvailable(project, null, file)
 
-          if (isStillAvalable) Some(() => if (isStillAvalable) fix.invoke(project, null, file))
+          if (isStillAvailable) Some(() => if (isStillAvailable) fix.invoke(project, null, file))
           else None
         }
       }
