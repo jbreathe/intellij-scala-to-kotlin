@@ -1,60 +1,39 @@
 package darthorimar.scalaToKotlinConverter.step
 
 import com.intellij.lang.jvm.JvmModifier
-import com.intellij.psi._
-import com.intellij.psi.impl.source.JavaDummyHolder
+import com.intellij.psi.{PsiElement, _}
 import darthorimar.scalaToKotlinConverter.ast._
 import darthorimar.scalaToKotlinConverter.definition.TupleDefinition
 import darthorimar.scalaToKotlinConverter.scopes.ScopedVal.scoped
-import darthorimar.scalaToKotlinConverter.scopes.{ ASTGeneratorState, ScopedVal }
+import darthorimar.scalaToKotlinConverter.scopes.{ASTGeneratorState, ScopedVal}
 import darthorimar.scalaToKotlinConverter.step.ConverterStep.Notifier
-import darthorimar.scalaToKotlinConverter.types.{ KotlinTypes, LibTypes, ScalaTypes }
-import darthorimar.scalaToKotlinConverter.{ Exprs, ast }
-import org.jetbrains.plugins.scala.lang.lexer.ScalaTokenTypes
+import darthorimar.scalaToKotlinConverter.types.{KotlinTypes, LibTypes, ScalaTypes}
+import darthorimar.scalaToKotlinConverter.{Exprs, ast}
+import org.jetbrains.plugins.scala.extensions._
+import org.jetbrains.plugins.scala.lang.psi.{ScalaPsiElement, ScalaPsiUtil}
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
 import org.jetbrains.plugins.scala.lang.psi.api.base._
-import org.jetbrains.plugins.scala.lang.psi.api.base.patterns._
-import org.jetbrains.plugins.scala.lang.psi.api.base.types.{ ScTypeArgs, ScTypeElement }
-import org.jetbrains.plugins.scala.lang.psi.api.expr._
-import org.jetbrains.plugins.scala.lang.psi.api.statements.{ ScFunction, ScFunctionDefinition, _ }
-import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ ScClassParameter, ScParameter, ScTypeParam }
-import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.{ ScClassParents, ScTemplateParents }
+import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.{ScReferencePattern, _}
+import org.jetbrains.plugins.scala.lang.psi.api.base.types.{ScTypeArgs, ScTypeElement}
+import org.jetbrains.plugins.scala.lang.psi.api.expr.{ScReferenceExpression, _}
+import org.jetbrains.plugins.scala.lang.psi.api.statements.params.{ScClassParameter, ScParameter, ScTypeParam}
+import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScFunction, ScFunctionDefinition, _}
+import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateParents
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.impl.expr.ScNewTemplateDefinitionImpl
 import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.ScClassImpl
 import org.jetbrains.plugins.scala.lang.psi.light.PsiClassWrapper
-import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{ DesignatorOwner, ScProjectionType, ScThisType }
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ JavaArrayType, StdType, TypeParameterType }
-import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ ScMethodType, ScTypePolymorphicType }
-import org.jetbrains.plugins.scala.lang.psi.types.result.{ TypeResult, Typeable }
-import org.jetbrains.plugins.scala.lang.psi.types.{
-  ScAbstractType,
-  ScCompoundType,
-  ScExistentialArgument,
-  ScExistentialType,
-  ScParameterizedType,
-  ScType
-}
-import org.jetbrains.plugins.scala.lang.psi.{ ScalaPsiElement, ScalaPsiUtil }
-import org.jetbrains.plugins.scala.extensions._
-import org.jetbrains.plugins.scala.lang.transformation.{ bindTo, qualifiedNameOf }
-import com.intellij.psi.PsiElement
-import com.intellij.psi.impl.source.JavaDummyHolder
-import org.jetbrains.plugins.scala.extensions.{ FirstChild, ImplicitConversion }
-import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
-import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
-import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScReferencePattern
-import org.jetbrains.plugins.scala.lang.psi.api.expr.ScReferenceExpression
-import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
-import org.jetbrains.plugins.scala.lang.psi.impl.ScalaCode._
-import org.jetbrains.plugins.scala.lang.transformation.{ AbstractTransformer, bindTo, qualifiedNameOf }
-import org.jetbrains.plugins.scala.project.ProjectContext
+import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScProjectionType, ScThisType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{JavaArrayType, StdType, TypeParameterType}
+import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
+import org.jetbrains.plugins.scala.lang.psi.types.result.{TypeResult, Typeable}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScAbstractType, ScCompoundType, ScExistentialArgument, ScExistentialType, ScParameterizedType, ScType}
 
 import scala.annotation.tailrec
 import scala.util.Try
 
 class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
-  val stateVal     = new ScopedVal[ASTGeneratorState](ASTGeneratorState(Map.empty))
+  val stateVal = new ScopedVal[ASTGeneratorState](ASTGeneratorState(Map.empty))
   val stepStateVal = new ScopedVal[ConverterStepState](new ConverterStepState)
 
   override def name: String = "Collecting code data"
@@ -77,8 +56,8 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
     file.getChildren.filter {
       case _: ScFunction => true
       case _: ScVariable => true
-      case _: ScValue    => true
-      case _             => false
+      case _: ScValue => true
+      case _ => false
     } ++ file.typeDefinitions
 
   private def genFunctionBody(fun: ScFunction): Option[Expr] = fun match {
@@ -123,7 +102,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case x: DesignatorOwner =>
         x.extractClass.map {
           case c: ScClassImpl => createTypeByName(c.qualifiedName)
-          case c: PsiClass    => createTypeByName(c.getQualifiedName)
+          case c: PsiClass => createTypeByName(c.getQualifiedName)
         } orElse {
           x.extractDesignatorSingleton.map(genType)
         } getOrElse createTypeByName(x.canonicalText)
@@ -164,11 +143,13 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       if (add) Some(attribute) else None
 
     val memberAttrs = (addAttribute(member.isPrivate, PrivateAttribute) ::
-      addAttribute(member.isPublic, PublicAttribute) ::
-      addAttribute(member.isProtected, ProtectedAttribute) ::
+      addAttribute(member.hasModifier(JvmModifier.PUBLIC), PublicAttribute) ::
+      // or
+      //addAttribute(member.hasModifierProperty("public"), PublicAttribute) ::
+      addAttribute(member.getModifierList().isProtected, ProtectedAttribute) ::
       addAttribute(member.hasFinalModifier, FinalAttribute) ::
       addAttribute(member.hasAbstractModifier, AbstractAttribute) ::
-      addAttribute(member.getModifierList().has(ScalaTokenTypes.kIMPLICIT), ImplicitAttribute) ::
+      addAttribute(member.getModifierList().isImplicit, ImplicitAttribute) ::
       Nil).flatten
     val extraAttrs = member match {
       case y: ScFunction =>
@@ -207,8 +188,8 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
   private def canonicalName(p: PsiElement, clazz: PsiClass): String =
     Option(p) map {
       case clazz: ScObject if clazz.isStatic => clazz.qualifiedName
-      case c: ScClass                        => c.qualifiedName
-      case c: PsiClass                       => c.getQualifiedName
+      case c: ScClass => c.qualifiedName
+      case c: PsiClass => c.getQualifiedName
       case m: PsiMember =>
         Option(m.getContainingClass)
           .filter(_ != clazz && m.hasModifier(JvmModifier.STATIC))
@@ -234,7 +215,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           findUnderscores(psi)
             .flatMap(_.overExpr)
             .map { over =>
-              val expr       = gen[Expr](over)
+              val expr = gen[Expr](over)
               val lambdaExpr = LambdaExpr(expr.exprType, Seq.empty, expr, needBraces = false)
               over.getTextRange -> lambdaExpr
             }
@@ -246,14 +227,14 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
             psi.getPackageName,
             genDefinitions(psi)
               .filter {
-                case _: PsiClassWrapper                 => false
+                case _: PsiClassWrapper => false
                 case y: ScObject if y.isSyntheticObject => false
-                case _                                  => true
+                case _ => true
               }
               .map(gen[DefExpr])
               .filter {
                 case Defn(_, ObjDefn, _, _, _, _, _, Some(_)) => false
-                case _                                        => true
+                case _ => true
               }
           )
         }
@@ -261,7 +242,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case typeDef: ScTypeDefinition =>
         val construct = typeDef match {
           case cls: ScClass => Some(cls.constructor.map(gen[Constructor]).getOrElse(EmptyConstructor))
-          case _            => None
+          case _ => None
         }
 
         val overrideConstuctParamsDefs =
@@ -290,14 +271,14 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
         val defnType =
           typeDef match {
-            case _: ScClass  => ClassDefn
-            case _: ScTrait  => TraitDefn
+            case _: ScClass => ClassDefn
+            case _: ScTrait => TraitDefn
             case _: ScObject => ObjDefn
           }
 
         val companionDefn = typeDef.baseCompanionModule.map {
           case _ if defnType == ObjDefn => ObjectCompanion
-          case c                        => ClassCompanion(gen[Defn](c))
+          case c => ClassCompanion(gen[Defn](c))
         }
 
         Defn(
@@ -312,41 +293,36 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         )
 
       case x: ScTemplateParents =>
-        val constructor = x match {
-          case y: ScClassParents =>
-            y.constructor.map { c =>
-              val needBrackets =
-                x.typeElements.headOption
-                  .flatMap(_.`type`().toOption)
-                  .collect {
-                    case d: DesignatorOwner => d.extractClass
-                  }
-                  .flatten
-                  .exists(!_.isInstanceOf[ScTrait])
-              SuperConstructor(genType(c.typeElement.`type`()),
-                               c.args.toSeq.flatMap(_.exprs).map(gen[Expr]),
-                               needBrackets)
+        val needBrackets =
+          x.typeElements.headOption
+            .flatMap(_.`type`().toOption)
+            .collect {
+              case d: DesignatorOwner => d.extractClass
             }
-          case _ => None
-        }
+            .flatten
+            .exists(!_.isInstanceOf[ScTrait])
+        val c = x.constructor.get
+        val constructor = Some(SuperConstructor(genType(c.typeElement.`type`()),
+          c.args.toSeq.flatMap(_.exprs).map(gen[Expr]),
+          needBrackets))
         SupersBlock(constructor, x.typeElementsWithoutConstructor.map(_.`type`()).map(genType))
 
       case x: ScFunction =>
         DefnDef(genAttributes(x),
-                None,
-                x.name,
-                x.typeParameters.map(gen[TypeParam]),
-                x.parameters.map(gen[DefParameter]),
-                genType(x.returnType),
-                genFunctionBody(x))
+          None,
+          x.name,
+          x.typeParameters.map(gen[TypeParam]),
+          x.parameters.map(gen[DefParameter]),
+          genType(x.returnType),
+          genFunctionBody(x))
 
       case x: ScBlockExpr if x.isAnonymousFunction =>
         LambdaExpr(
           genType(x.`type`()),
           Seq.empty,
           MatchExpr(genType(x.`type`()),
-                    UnderscoreExpr(NoType),
-                    x.caseClauses.get.caseClauses.map(gen[MatchCaseClause])),
+            UnderscoreExpr(NoType),
+            x.caseClauses.get.caseClauses.map(gen[MatchCaseClause])),
           needBraces = false
         )
 
@@ -379,11 +355,11 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         @tailrec
         def containingClass(p: PsiElement): Option[PsiClass] = p match {
           case c: PsiClass => Some(c)
-          case _: PsiFile  => None
-          case _           => containingClass(p.getParent)
+          case _: PsiFile => None
+          case _ => containingClass(p.getParent)
         }
 
-        val ty     = genType(x.`type`())
+        val ty = genType(x.`type`())
         val binded = x.bind().get
         val isFunc = {
           val sourceElement = x.getReference.resolve()
@@ -401,13 +377,13 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           case target: PsiNamedElement if x.refName != target.name && target.name == "apply" =>
             val refType = binded.getActualElement match {
               case typeable: Typeable => genType(typeable.`type`())
-              case _                  => ty
+              case _ => ty
             }
             RefExpr(ty,
-                    Some(referencedObject.copy(isFunctionRef = false, exprType = refType)),
-                    "apply",
-                    Seq.empty,
-                    isFunctionRef = true)
+              Some(referencedObject.copy(isFunctionRef = false, exprType = refType)),
+              "apply",
+              Seq.empty,
+              isFunctionRef = true)
           case _ => referencedObject
         }
 
@@ -436,22 +412,22 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
       case x: ScIfStmt =>
         IfExpr(genType(x.`type`()),
-               gen[Expr](x.condition.get),
-               gen[Expr](x.thenBranch.get),
-               x.elseBranch.map(gen[Expr]))
+          gen[Expr](x.condition.get),
+          gen[Expr](x.thenBranch.get),
+          x.elseBranch.map(gen[Expr]))
 
       case x: ScMatchStmt =>
         MatchExpr(genType(x.`type`()), gen[Expr](x.expr.get), x.caseClauses.map(gen[MatchCaseClause]))
       case x: ScFunctionExpr =>
         LambdaExpr(genType(x.`type`()),
-                   x.parameters.map(gen[DefParameter]),
-                   gen[Expr](x.result.get),
-                   needBraces = false)
+          x.parameters.map(gen[DefParameter]),
+          gen[Expr](x.result.get),
+          needBraces = false)
 
       case x: ScCaseClause =>
         MatchCaseClause(gen[CasePattern](x.pattern.get),
-                        x.expr.map(gen[Expr]).get, //todo fix
-                        x.guard.flatMap(_.expr).map(gen[Expr]))
+          x.expr.map(gen[Expr]).get, //todo fix
+          x.guard.flatMap(_.expr).map(gen[Expr]))
 
       case x: ScTuplePattern =>
         val arity = x.patternList.toSeq.flatMap(_.patterns).size
@@ -463,9 +439,9 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
         if (arity != 2) stepStateVal.addDefinition(new TupleDefinition(arity))
         ConstructorPattern(CaseClassConstructorRef(constructorType),
-                           x.patternList.toSeq.flatMap(_.patterns.map(gen[CasePattern])),
-                           None,
-                           x.getText)
+          x.patternList.toSeq.flatMap(_.patterns.map(gen[CasePattern])),
+          None,
+          x.getText)
 
       case x: ScCompositePattern =>
         CompositePattern(x.subpatterns.map(gen[CasePattern]), None)
@@ -477,11 +453,11 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         val bindResult = x.ref.bind()
         val obj = bindResult.flatMap(_.getActualElement match {
           case o: ScObject => Some(o)
-          case _           => None
+          case _ => None
         })
         val unapplyRef = bindResult.flatMap(_.element match {
           case f: ScFunction => Some(f)
-          case _             => None
+          case _ => None
         })
         val isCaseClass =
           obj.flatMap(_.baseCompanionModule).exists(_.isCase)
@@ -499,7 +475,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case x: ScReferencePattern =>
         x.expectedType.map(genType) match {
           case Some(t) => TypedPattern(x.name, t, None)
-          case _       => ReferencePattern(x.name, None)
+          case _ => ReferencePattern(x.name, None)
         }
 
       case x: ScReferenceElement =>
@@ -534,17 +510,17 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         )
 
       case x: ScValueDeclaration =>
-        SimpleValOrVarDef(genAttributes(x), true, x.declaredElements.head.name, x.declaredType.map(genType), None)
+        SimpleValOrVarDef(genAttributes(x), isVal = true, x.declaredElements.head.name, x.declaredType.map(genType), None)
 
       case x: ScVariableDeclaration =>
-        SimpleValOrVarDef(genAttributes(x), false, x.declaredElements.head.name, x.declaredType.map(genType), None)
+        SimpleValOrVarDef(genAttributes(x), isVal = false, x.declaredElements.head.name, x.declaredType.map(genType), None)
 
       case x: ScAssignStmt =>
         AssignExpr(gen[Expr](x.getLExpression), gen[Expr](x.getRExpression.get))
 
       case x: ScNewTemplateDefinitionImpl =>
         NewExpr(genType(Some(x.constructor.get.typeElement)),
-                x.constructor.get.args.toSeq.flatMap(_.exprs).map(gen[Expr]))
+          x.constructor.get.args.toSeq.flatMap(_.exprs).map(gen[Expr]))
 
       case x: ScPrimaryConstructor =>
         ParamsConstructor(x.parameters.map(gen[ConstructorParam]))
@@ -559,7 +535,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           case NoMemberKind => NoAttribute
           case _ =>
             if (x.isPrivate) PrivateAttribute
-            else if (x.isProtected) ProtectedAttribute
+            else if (x.getModifierList().isProtected) ProtectedAttribute
             else if (x.hasModifierProperty("public")) PublicAttribute
             else NoAttribute
         }
@@ -571,15 +547,15 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
       case x: ScTryStmt =>
         ScalaTryExpr(genType(x.`type`()),
-                     gen[Expr](x.tryBlock),
-                     x.catchBlock.flatMap(_.expression).map(gen[ScalaCatch]),
-                     x.finallyBlock.flatMap(_.expression).map(gen[Expr]))
+          gen[Expr](x.tryBlock),
+          x.catchBlock.flatMap(_.expression).map(gen[ScalaCatch]),
+          x.finallyBlock.flatMap(_.expression).map(gen[Expr]))
 
       case x: ScForStatement =>
         ForExpr(genType(x.`type`()),
-                x.enumerators.toSeq.flatMap(_.getChildren).map(gen[ForEnumerator]),
-                x.isYield,
-                gen[Expr](x.body.get))
+          x.enumerators.toSeq.flatMap(_.getChildren).map(gen[ForEnumerator]),
+          x.isYield,
+          gen[Expr](x.body.get))
 
       case x: ScGenerator =>
         ForGenerator(gen[CasePattern](x.pattern), gen[Expr](x.rvalue))
@@ -594,14 +570,14 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         import org.jetbrains.plugins.scala.lang.psi.types.api._
 
         val variance = x.variance match {
-          case Invariant     => InvariantTypeParam
-          case Covariant     => CovariantTypeParam
+          case Invariant => InvariantTypeParam
+          case Covariant => CovariantTypeParam
           case Contravariant => ContravariantTypeParam
         }
         TypeParam(x.name,
-                  variance,
-                  x.upperBound.toOption.map(genType).filter(_ != ast.StdType("Any")),
-                  x.lowerBound.toOption.map(genType).filter(_ != ast.StdType("Nothing")))
+          variance,
+          x.upperBound.toOption.map(genType).filter(_ != ast.StdType("Any")),
+          x.lowerBound.toOption.map(genType).filter(_ != ast.StdType("Nothing")))
 
       case x: ScPostfixExpr =>
         PostfixExpr(genType(x.`type`()), gen[Expr](x.operand), x.operation.refName)

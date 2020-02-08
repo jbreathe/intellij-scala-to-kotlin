@@ -1,19 +1,14 @@
 package darthorimar.scalaToKotlinConverter
 
-import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.progress.{ProgressIndicator, ProgressManager, Task}
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.{Computable, ThrowableComputable}
-import com.intellij.util.Alarm
-import com.intellij.util.concurrency.Semaphore
 import darthorimar.scalaToKotlinConverter.ast.AST
 import darthorimar.scalaToKotlinConverter.step.ConverterStep.{Notifier, Result}
-import darthorimar.scalaToKotlinConverter.step.transform._
 import darthorimar.scalaToKotlinConverter.step._
-import org.jetbrains.kotlin.psi.{KtElement, KtFile}
+import darthorimar.scalaToKotlinConverter.step.transform._
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
-import org.jetbrains.plugins.scala.util.ScalaUtils
-import org.jetbrains.plugins.scala.extensions._
 
 
 class PostProcessOperationConverter(protect: Project) extends Converter[KtElement, KtElement](protect) {
