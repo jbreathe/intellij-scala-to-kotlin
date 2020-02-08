@@ -1,7 +1,5 @@
 package darthorimar.scalaToKotlinConverter
 
-import scala.util.Try
-
 class ConvertTest extends ConverterTestBase {
 
   def testFuncCall(): Unit = {
@@ -11,7 +9,7 @@ class ConvertTest extends ConverterTestBase {
   def testVararg(): Unit =
     doTest("""def foo(xs: String*) = xs""".stripMargin, """fun foo(vararg xs: String): List<String> =xs""".stripMargin)
 
-  def testUncarry(): Unit = {
+  def testUncurry(): Unit = {
     doTest(
       """def a(x: Int, b: String)(c: Char) = 1
         |def b = a(1,"2")('3')
@@ -32,10 +30,10 @@ class ConvertTest extends ConverterTestBase {
         |    }
       """.stripMargin,
       """
-        |open class A() {
+        |open class A {
         |  fun a(): Int =5
         |}
-        |open class B() : A() {
+        |open class B : A() {
         |  override fun a(): Int =42
         |}""".stripMargin
     )
@@ -71,7 +69,7 @@ class ConvertTest extends ConverterTestBase {
         |  var d = 1
         |}
       """.stripMargin,
-      """open class A() {
+      """open class A {
         |   val a: Int
         |   val b: Int = 32
         |   var c: Int
@@ -81,7 +79,7 @@ class ConvertTest extends ConverterTestBase {
     )
 
   def testClassTypeParams(): Unit =
-    doTest("""class A[T]""".stripMargin, """open class A<T>()""".stripMargin)
+    doTest("""class A[T]""".stripMargin, """open class A<T>""".stripMargin)
 
   def testImplicits(): Unit =
     doExprTest(
@@ -102,7 +100,7 @@ class ConvertTest extends ConverterTestBase {
            """fun a(x: () -> Int): Int =x()
         |fun q(): Int =a { 1 }""".stripMargin)
 
-  def testForYeild(): Unit =
+  def testForYield(): Unit =
     doTest(
       """val a = for {
         |  i <- Seq(1,2)

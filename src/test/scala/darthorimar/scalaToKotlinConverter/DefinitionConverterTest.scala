@@ -27,7 +27,7 @@ class DefinitionConverterTest extends ConverterTestBase {
       """
         |open class A(private val a: Int)
         |interface B
-        |open class C() : A(1), B
+        |open class C : A(1), B
       """.stripMargin
     )
 
@@ -38,7 +38,7 @@ class DefinitionConverterTest extends ConverterTestBase {
         |object A {def a = 5}
         |object B
       """.stripMargin,
-      """open class A() {
+      """open class A {
         |  companion object {
         |    public fun a(): Int =5
         |  }
@@ -55,7 +55,7 @@ class DefinitionConverterTest extends ConverterTestBase {
         |class C extends A(1, "nya")
       """.stripMargin,
       """open class A(private val a: Int, private val b: String)
-        |open class C() : A(1, "nya")
+        |open class C : A(1, "nya")
       """.stripMargin
     )
 
@@ -66,9 +66,9 @@ class DefinitionConverterTest extends ConverterTestBase {
         |class B
         |abstract class C
       """.stripMargin,
-      """class A()
-        |open class B()
-        |abstract class C()
+      """class A
+        |open class B
+        |abstract class C
       """.stripMargin
     )
 

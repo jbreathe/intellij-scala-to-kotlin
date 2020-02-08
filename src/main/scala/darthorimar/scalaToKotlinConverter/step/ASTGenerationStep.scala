@@ -238,7 +238,12 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
       case typeDef: ScTypeDefinition =>
         val construct = typeDef match {
-          case cls: ScClass => Some(cls.constructor.map(gen[Constructor]).getOrElse(EmptyConstructor))
+          case cls: ScClass =>
+            if (cls.constructor.get.parameters.isEmpty) {
+              Some(EmptyConstructor)
+            } else {
+              cls.constructor.map(gen[Constructor])
+            }
           case _ => None
         }
 
