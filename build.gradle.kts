@@ -40,6 +40,10 @@ project(":") {
         pluginName = "IntellijScalaToKotlin"
     }
     dependencies {
+        // exclude "scala-library" from runtime dependencies
+        // due to https://intellij-support.jetbrains.com/hc/en-us/community/posts/206003909-Plugin-dependency-class-loading-problem
+        // and similar problems
+        configurations.runtime.exclude("org.scala-lang", "scala-library")
         compileOnly("org.scala-lang:scala-library:2.12.6")
         testCompile("org.scala-lang:scala-library:2.12.6")
         testCompile("junit:junit:4.12")
