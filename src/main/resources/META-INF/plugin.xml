@@ -14,10 +14,12 @@
       </ul>
     ]]></description>
 
+    <!-- Due to https://blog.jetbrains.com/platform/2019/06/java-functionality-extracted-as-a-plugin/ -->
+    <depends>com.intellij.modules.java</depends>
     <depends>org.intellij.scala</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <idea-version since-build="191"/>
+    <idea-version since-build="192"/>
 
 
     <!--Converter API -->

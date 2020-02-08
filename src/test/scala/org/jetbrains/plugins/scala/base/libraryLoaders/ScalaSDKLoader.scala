@@ -1,62 +1,101 @@
-package org.jetbrains.plugins.scala.base.libraryLoaders
+package org.jetbrains.plugins.scala
+package base
+package libraryLoaders
 
 import java.io.File
+import java.{util => ju}
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.roots.ui.configuration.libraryEditor.ExistingLibraryEditor
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.{JarFileSystem, VirtualFile}
 import com.intellij.testFramework.PsiTestUtil
-import org.jetbrains.plugins.scala.DependencyManagerBase._
-import org.jetbrains.plugins.scala.debugger.ScalaVersion
-import org.jetbrains.plugins.scala.extensions.inWriteAction
-import org.jetbrains.plugins.scala.project.template.Artifact.ScalaCompiler.versionOf
-import org.jetbrains.plugins.scala.project.{ LibraryExt, ModuleExt, ScalaLanguageLevel }
-import org.jetbrains.plugins.scala.{ DependencyManagerBase, ScalaLoader }
+import org.jetbrains.plugins.scala.project.{ModuleExt, ScalaLibraryProperties, ScalaLibraryType, template}
 import org.junit.Assert._
 
-import scala.collection.JavaConverters._
-
 case class ScalaSDKLoader(includeScalaReflect: Boolean = false) extends LibraryLoader {
-  protected lazy val dependencyManager: DependencyManagerBase = new DependencyManagerBase {
-    override protected val artifactBlackList: Set[String] = Set.empty
+
+  private object DependencyManager extends DependencyManagerBase {
+    override protected val artifactBlackList = Set.empty[String]
   }
 
-  override def init(implicit module: Module, version: ScalaVersion): Unit = {
+  import DependencyManagerBase._
+  import ScalaSDKLoader._
+  import template.Artifact.ScalaCompiler.{versionOf => ScalaCompilerVersion}
 
-    val deps = Seq(
-      "org.scala-lang" % "scala-compiler" % version.minor,
-      "org.scala-lang" % "scala-library"  % version.minor,
-      "org.scala-lang" % "scala-reflect"  % version.minor
-    ).filterNot(!includeScalaReflect && _.artId.contains("reflect"))
+  protected def binaryDependencies(implicit version: ScalaVersion): List[DependencyDescription] =
+    for {
+      descriptor <- scalaCompilerDescription ::
+        scalaLibraryDescription ::
+        scalaReflectDescription ::
+        Nil
 
-    val resolved     = deps.flatMap(dependencyManager.resolve(_))
-    val srcsResolved = dependencyManager.resolve("org.scala-lang" % "scala-library" % version.minor % Types.SRC)
+      if includeScalaReflect || !descriptor.artId.contains("reflect")
+    } yield descriptor
 
-    assertEquals(s"Failed to resolve scala sdk version $version, result:\n${resolved.mkString("\n")}",
-                 deps.size,
-                 resolved.size)
+  protected def sourcesDependency(implicit version: ScalaVersion): DependencyDescription =
+    scalaLibraryDescription % Types.SRC
 
-    assertTrue(s"Local SDK files failed to verify for version $version:\n${resolved.mkString("\n")}",
-               resolved.nonEmpty && resolved.forall(_.file.exists()))
+  final def sourceRoot(implicit version: ScalaVersion): VirtualFile = {
+    val ResolvedDependency(_, file) = DependencyManager.resolveSingle(sourcesDependency)
+    findJarFile(file)
+  }
+
+  override final def init(implicit module: Module, version: ScalaVersion): Unit = {
+    val dependencies = binaryDependencies
+    val resolved = DependencyManager.resolve(dependencies: _*)
+
+    assertEquals(
+      s"Failed to resolve scala sdk version $version, result:\n${resolved.mkString("\n")}",
+      dependencies.size,
+      resolved.size
+    )
+
+    val compilerClasspath = for {
+      ResolvedDependency(_, file) <- resolved
+      if file.exists()
+    } yield file
+
+    assertFalse(
+      s"Local SDK files failed to verify for version $version:\n${resolved.mkString("\n")}",
+      compilerClasspath.isEmpty
+    )
+
+    val classesRoots = {
+      import scala.collection.JavaConverters._
+      compilerClasspath.map(findJarFile).asJava
+    }
 
     val library = PsiTestUtil.addProjectLibrary(
       module,
       s"scala-sdk-${version.minor}",
-      resolved.map(_.toJarVFile).asJava,
-      srcsResolved.map(_.toJarVFile).asJava
+      classesRoots,
+      ju.Collections.singletonList(sourceRoot)
     )
 
     Disposer.register(module, library)
-
     inWriteAction {
-      library.convertToScalaSdkWith(languageLevel(resolved.head.file), resolved.map(_.file))
-      module.attach(library)
+      val properties = ScalaLibraryProperties(
+        ScalaCompilerVersion(compilerClasspath.head),
+        compilerClasspath
+      )
+
+      val editor = new ExistingLibraryEditor(library, null)
+      editor.setType(ScalaLibraryType())
+      editor.setProperties(properties)
+      editor.commit()
+
+      val model = module.modifiableModel
+      model.addLibraryEntry(library)
+      model.commit()
     }
-
-    ScalaLoader.loadScala()
   }
+}
 
-  private def languageLevel(compiler: File) =
-    versionOf(compiler)
-      .flatMap(_.toLanguageLevel)
-      .getOrElse(ScalaLanguageLevel.Default)
+object ScalaSDKLoader {
+
+  private def findJarFile(file: File) =
+    JarFileSystem.getInstance().refreshAndFindFileByPath {
+      file.getCanonicalPath + "!/"
+    }
 }

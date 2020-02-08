@@ -24,7 +24,7 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
 
   def createKtFile(text: String): KtFile = {
     PsiFileFactory
-      .getInstance(project)
+      .getInstance(getProjectAdapter)
       .createFileFromText("dummy.kt", KotlinLanguage.INSTANCE, text, true, false)
       .asInstanceOf[KtFile]
   }
@@ -54,8 +54,8 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
     var result: T = null.asInstanceOf[T]
     CommandProcessor
       .getInstance()
-      .executeCommand(project, () => {
-        CommandProcessor.getInstance().markCurrentCommandAsGlobal(project)
+      .executeCommand(getProjectAdapter, () => {
+        CommandProcessor.getInstance().markCurrentCommandAsGlobal(getProjectAdapter)
         result = inWriteAction(data)
       }, "", null)
     result

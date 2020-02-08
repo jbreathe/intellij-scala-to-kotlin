@@ -1,6 +1,5 @@
 package darthorimar.scalaToKotlinConverter.step
 
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.{PsiElement, _}
 import darthorimar.scalaToKotlinConverter.ast._
 import darthorimar.scalaToKotlinConverter.definition.TupleDefinition
@@ -143,12 +142,10 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       if (add) Some(attribute) else None
 
     val memberAttrs = (addAttribute(member.isPrivate, PrivateAttribute) ::
-      addAttribute(member.hasModifier(JvmModifier.PUBLIC), PublicAttribute) ::
-      // or
-      //addAttribute(member.hasModifierProperty("public"), PublicAttribute) ::
+      addAttribute(member.hasModifierProperty("public"), PublicAttribute) ::
       addAttribute(member.getModifierList().isProtected, ProtectedAttribute) ::
-      addAttribute(member.hasFinalModifier, FinalAttribute) ::
-      addAttribute(member.hasAbstractModifier, AbstractAttribute) ::
+      addAttribute(member.getModifierList().isFinal, FinalAttribute) ::
+      addAttribute(member.getModifierList().isAbstract, AbstractAttribute) ::
       addAttribute(member.getModifierList().isImplicit, ImplicitAttribute) ::
       Nil).flatten
     val extraAttrs = member match {
@@ -192,7 +189,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case c: PsiClass => c.getQualifiedName
       case m: PsiMember =>
         Option(m.getContainingClass)
-          .filter(_ != clazz && m.hasModifier(JvmModifier.STATIC))
+          .filter(_ != clazz && m.hasModifierProperty("static"))
           .map(canonicalName(_, clazz) + ".")
           .getOrElse("") + m.getName
 
@@ -547,7 +544,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
       case x: ScTry =>
         ScalaTryExpr(genType(x.`type`()),
-          gen[Expr](x.tryBlock),
+          gen[Expr](x.expression.get),
           x.catchBlock.flatMap(_.expression).map(gen[ScalaCatch]),
           x.finallyBlock.flatMap(_.expression).map(gen[Expr]))
 
