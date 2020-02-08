@@ -1,6 +1,7 @@
 package darthorimar.scalaToKotlinConverter
 
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFileFactory
 import com.intellij.testFramework.LightPlatformTestCase
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -12,9 +13,11 @@ import org.junit.Assert._
 
 abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAdapter {
 
-  private def formatKotlinCode(unformatedCode: String): String = {
+  private def formatKotlinCode(unformattedCode: String): String = {
+    // convert all line separators to "\n"
+    val codeWithUnifiedLineSeparators = StringUtil.convertLineSeparators(unformattedCode)
     val ktPsiFactory = new KtPsiFactory(LightPlatformTestCase.getProject)
-    val ktFile = ktPsiFactory.createFile(unformatedCode)
+    val ktFile = ktPsiFactory.createFile(codeWithUnifiedLineSeparators)
     Utils.reformatKtElement(ktFile)
     ktFile.getText.trim.split('\n').filterNot(_.isEmpty).mkString("\n")
   }
@@ -42,9 +45,9 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
       ktFile.getText
     }
 
-    val formatedExpected = formatKotlinCode(kotlin)
-    val formatedActual = formatKotlinCode(convertedCode)
-    assertEquals(formatedExpected, formatedActual)
+    val formattedExpected = formatKotlinCode(kotlin)
+    val formattedActual = formatKotlinCode(convertedCode)
+    assertEquals(formattedExpected, formattedActual)
   }
 
   private def inWriteCommand[T](data: => T): T = {
