@@ -17,7 +17,7 @@
     <depends>org.intellij.scala</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <idea-version since-build="183"/>
+    <idea-version since-build="191"/>
 
 
     <!--Converter API -->

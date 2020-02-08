@@ -19,8 +19,8 @@ allprojects {
 
 
     intellij {
-        version = "IC-2018.3"
-        setPlugins("Kotlin", "org.intellij.scala:2018.3.7")
+        version = "IC-2019.1"
+        setPlugins("Kotlin", "org.intellij.scala:2019.1.9")
     }
     version = "0.1.1"
 }

@@ -1,11 +1,13 @@
 package darthorimar.scalaToKotlinConverter.step
 
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiFile
 import darthorimar.scalaToKotlinConverter.ImplicitTransform
 import darthorimar.scalaToKotlinConverter.step.ConverterStep.Notifier
-import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
-import org.jetbrains.plugins.scala.lang.transformation.Transformer
-import org.jetbrains.plugins.scala.lang.transformation.calls.ExpandApplyCall
 import org.jetbrains.plugins.scala.extensions.inWriteAction
+import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
+import org.jetbrains.plugins.scala.lang.transformation.Transformer
 
 class InnerPsiTransformStep extends ConverterStep[ScalaPsiElement, ScalaPsiElement] {
   override def name: String = "Preparing code for translation"
@@ -13,6 +15,7 @@ class InnerPsiTransformStep extends ConverterStep[ScalaPsiElement, ScalaPsiEleme
   private val transformers: Set[Transformer] = Set(
     new ImplicitTransform()
   )
+
   override def apply(from: ScalaPsiElement,
                      state: ConverterStepState,
                      index: Int,
@@ -20,9 +23,12 @@ class InnerPsiTransformStep extends ConverterStep[ScalaPsiElement, ScalaPsiEleme
     notifier.notify(this, index)
     val result = inWriteAction {
       val copy = from.copy()
-      Transformer.transform(copy, None, transformers)
+      val file = copy.getContainingFile
+      Transformer.applyTransformersAndReformat(copy, file, None, transformers, null)
       copy.asInstanceOf[ScalaPsiElement]
     }
     (result, state)
   }
+
+  def noOp(list: List[TextRange], file: PsiFile, doc: Document): Unit = {}
 }

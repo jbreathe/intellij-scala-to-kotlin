@@ -1,22 +1,11 @@
 package darthorimar.scalaToKotlinConverter
 
-import java.util
-
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.util.TextRange
-import com.intellij.psi.{ PsiDirectory, PsiDocumentManager, PsiElement, PsiFile }
 import com.intellij.psi.codeStyle.CodeStyleManager
-import darthorimar.scalaToKotlinConverter.ast.{ Import, Type }
-import org.jetbrains.kotlin.caches.resolve.KotlinCacheService
-import org.jetbrains.kotlin.idea.j2k.J2kPostProcessor
-import org.jetbrains.kotlin.idea.util.ImportInsertHelper
-import org.jetbrains.kotlin.name.FqName
+import com.intellij.psi.{PsiDirectory, PsiElement}
+import darthorimar.scalaToKotlinConverter.ast.Type
 import org.jetbrains.kotlin.psi._
-import org.jetbrains.kotlin.resolve.ImportPath
-import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
-import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
 import org.jetbrains.plugins.scala.extensions.inWriteAction
+import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
 
 object Utils {
   def createKotlinName(file: ScalaFile): String = {
@@ -41,7 +30,7 @@ object Utils {
 
     psi match {
       case scalaFile: ScalaFile =>
-        byPackageName(scalaFile.packageName)
+        byPackageName(scalaFile.getPackageName)
       case ktFile: KtFile =>
         byPackageName(ktFile.getPackageFqName.asString)
       case _ =>

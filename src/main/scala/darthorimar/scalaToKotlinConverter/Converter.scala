@@ -8,15 +8,15 @@ import darthorimar.scalaToKotlinConverter.step.ConverterStep.{Notifier, Result}
 import darthorimar.scalaToKotlinConverter.step._
 import darthorimar.scalaToKotlinConverter.step.transform._
 import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
+import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 
 
 class PostProcessOperationConverter(protect: Project) extends Converter[KtElement, KtElement](protect) {
   override def convert(from: KtElement, state: ConverterStepState): Result[KtElement] = {
     val converter: ConverterStep[KtElement, KtElement] =
-        wrapped(withProgress(background = false),
-          new FormatFileAndGenerateImportsAndDefinitionsStep -->
-            new ApplyInspectionsStep)
+      wrapped(withProgress(background = false),
+        new FormatFileAndGenerateImportsAndDefinitionsStep -->
+          new ApplyInspectionsStep)
     converter(from, state, 0, notifier(stepsCount = 2, s"Converting file ${from.getContainingFile.getName}"))
   }
 }

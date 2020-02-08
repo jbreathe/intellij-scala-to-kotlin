@@ -1,14 +1,14 @@
 package darthorimar.scalaToKotlinConverter
 
-import com.intellij.openapi.project.{Project, ProjectManager}
-import com.intellij.psi.{PsiElement, PsiFile}
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import darthorimar.languageConversion.LanguageConverterExtension
 import darthorimar.scalaToKotlinConverter.ast.AST
 import darthorimar.scalaToKotlinConverter.step.ConverterStepState
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.plugins.scala.ScalaLanguage
-import org.jetbrains.plugins.scala.lang.psi.ScalaPsiElement
+import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 
 class ScalaToKotlinLanguageConverter extends LanguageConverterExtension[AST, ConverterStepState](
   ScalaLanguage.INSTANCE, KotlinLanguage.INSTANCE) {
