@@ -5,12 +5,12 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFileFactory
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.{KtFile, KtPsiFactory}
-import org.jetbrains.plugins.scala.base.ScalaLightPlatformCodeInsightTestCaseAdapter
+import org.jetbrains.plugins.scala.base.ScalaLightCodeInsightFixtureTestAdapter
 import org.jetbrains.plugins.scala.extensions.inWriteAction
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
 import org.junit.Assert._
 
-abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAdapter {
+abstract class ConverterTestBase extends ScalaLightCodeInsightFixtureTestAdapter {
   private def formatKotlinCode(unformattedCode: String): String = {
     // convert all line separators to "\n"
     val codeWithUnifiedLineSeparators = StringUtil.convertLineSeparators(unformattedCode)
@@ -22,21 +22,21 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
 
   def createKtFile(text: String): KtFile = {
     PsiFileFactory
-      .getInstance(getProjectAdapter)
+      .getInstance(getProject)
       .createFileFromText("dummy.kt", KotlinLanguage.INSTANCE, text, true, false)
       .asInstanceOf[KtFile]
   }
 
   def doTest(scala: String, kotlin: String): Unit = {
-    configureFromFileTextAdapter("dummy.scala", scala)
-    val scalaFile = getFileAdapter.asInstanceOf[ScalaFile]
+    configureFromFileText("dummy.scala", StringUtil.convertLineSeparators(scala))
+    val scalaFile = getFile.asInstanceOf[ScalaFile]
 
     val converter = new ScalaToKotlinLanguageConverter
 
     val convertedCode = inWriteCommand {
       val intermediateResult = converter.convertPsiElementToInternalRepresentation(scalaFile)
       val result = converter.convertInternalRepresentationToText(intermediateResult.getFirst,
-        intermediateResult.getSecond, getProjectAdapter)
+        intermediateResult.getSecond, getProject)
       val ktFile = createKtFile(result.getFirst)
       converter.runPostProcessOperations(ktFile, result.getSecond)
       ktFile.getText
@@ -51,8 +51,8 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
     var result: T = null.asInstanceOf[T]
     CommandProcessor
       .getInstance()
-      .executeCommand(getProjectAdapter, () => {
-        CommandProcessor.getInstance().markCurrentCommandAsGlobal(getProjectAdapter)
+      .executeCommand(getProject, () => {
+        CommandProcessor.getInstance().markCurrentCommandAsGlobal(getProject)
         result = inWriteAction(data)
       }, "", null)
     result

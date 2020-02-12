@@ -36,8 +36,6 @@ abstract class ScalaLightCodeInsightFixtureTestAdapter
 
   override final def getFixture: JavaCodeInsightTestFixture = myFixture
 
-  override def getTestDataPath: String = util.TestUtils.getTestDataPath + "/"
-
   protected def loadScalaLibrary: Boolean = true
 
   override protected def librariesLoaders: Seq[LibraryLoader] = Seq(
@@ -46,11 +44,13 @@ abstract class ScalaLightCodeInsightFixtureTestAdapter
 
   override protected def getProjectDescriptor: LightProjectDescriptor = new ScalaLightProjectDescriptor() {
     override def tuneModule(module: Module): Unit = setUpLibraries(module)
+
     override def getSdk: Sdk = SmartJDKLoader.getOrCreateJDK()
   }
 
   override def setUpLibraries(implicit module: Module): Unit = {
-    Registry.get("ast.loading.filter").setValue(true, getTestRootDisposable)
+    val disposable = getTestRootDisposable
+    Registry.get("ast.loading.filter").setValue(true, disposable)
     if (loadScalaLibrary) {
       getFixture.allowTreeAccessForAllFiles()
       super.setUpLibraries(module)
@@ -71,8 +71,8 @@ abstract class ScalaLightCodeInsightFixtureTestAdapter
     file
   }
 
-  protected def configureFromFileText(fileText: String, fileType: String): PsiFile = {
-    val file = getFixture.configureByText(fileType, normalize(fileText))
+  protected def configureFromFileText(fileName: String, fileText: String) = {
+    val file = getFixture.configureByText(fileName, normalize(fileText))
     assertNotNull(file)
     file
   }
@@ -102,6 +102,7 @@ abstract class ScalaLightCodeInsightFixtureTestAdapter
     val caretIndex = normalizedText.indexOf(CARET)
 
     def isAroundCaret(info: HighlightInfo) = caretIndex == -1 || new TextRange(info.getStartOffset, info.getEndOffset).contains(caretIndex)
+
     val infos = myFixture.doHighlighting().asScala
 
     val warnings = infos.filter(i => StringUtil.isNotEmpty(i.getDescription) && isAroundCaret(i))
@@ -112,7 +113,6 @@ abstract class ScalaLightCodeInsightFixtureTestAdapter
       failingTestPassed()
     }
   }
-
 
   protected def failingTestPassed(): Unit = throw new RuntimeException(failingPassed)
 
@@ -154,8 +154,8 @@ object ScalaLightCodeInsightFixtureTestAdapter {
     val (textActual, caretOffsets) = findCaretOffsets(text, stripTrailingSpaces)
     caretOffsets match {
       case Seq(caretIdx) => (textActual, caretIdx)
-      case Seq()         => (textActual, -1)
-      case _             => fail(s"single caret expected but found: ${caretOffsets.size}").asInstanceOf[Nothing]
+      case Seq() => (textActual, -1)
+      case _ => fail(s"single caret expected but found: ${caretOffsets.size}").asInstanceOf[Nothing]
     }
   }
 
@@ -195,4 +195,5 @@ object ScalaLightCodeInsightFixtureTestAdapter {
       VfsUtil.saveText(file, normalize(fileText))
     }
   }
+
 }
