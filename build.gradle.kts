@@ -1,6 +1,5 @@
 plugins {
     idea
-    kotlin("jvm") version "1.2.61"
     id("org.jetbrains.intellij") version "0.3.6"
     id("scala")
     id("com.diffplug.gradle.spotless") version "3.14.0"
@@ -9,7 +8,6 @@ plugins {
 allprojects {
     apply {
         plugin("idea")
-        plugin("kotlin")
         plugin("org.jetbrains.intellij")
     }
 
@@ -43,10 +41,5 @@ project(":") {
         compileOnly("org.scala-lang:scala-library:2.12.6")
         testCompile("org.scala-lang:scala-library:2.12.6")
         testCompile("junit:junit:4.12")
-        compile(project(":converter-api"))
     }
-}
-
-project(":converter-api") {
-
 }
