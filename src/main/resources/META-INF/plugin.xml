@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <idea-plugin>
-    <id>darthorimar.scalaToKotlin</id>
+    <id>jbreathe.kotlinish</id>
     <name>Scala to Kotlin Converter</name>
-    <version>0.1.1</version>
-    <vendor url="https://github.com/darthorimar"/>
+    <version>2019.2.0</version>
+    <vendor url="https://github.com/jbreathe"/>
 
     <description><![CDATA[
       Scala to Kotlin programming languages converter:
