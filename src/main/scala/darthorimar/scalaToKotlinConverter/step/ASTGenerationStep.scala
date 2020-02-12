@@ -21,10 +21,10 @@ import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.light.PsiClassWrapper
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScProjectionType, ScThisType}
-import org.jetbrains.plugins.scala.lang.psi.types.api.{JavaArrayType, StdType, TypeParameterType}
+import org.jetbrains.plugins.scala.lang.psi.types.api.{JavaArrayType, StdType, TypeParameterType, ValType}
 import org.jetbrains.plugins.scala.lang.psi.types.nonvalue.{ScMethodType, ScTypePolymorphicType}
 import org.jetbrains.plugins.scala.lang.psi.types.result.{TypeResult, Typeable}
-import org.jetbrains.plugins.scala.lang.psi.types.{ScAbstractType, ScCompoundType, ScExistentialArgument, ScExistentialType, ScParameterizedType, ScType}
+import org.jetbrains.plugins.scala.lang.psi.types.{ScAbstractType, ScCompoundType, ScExistentialArgument, ScExistentialType, ScLiteralType, ScParameterizedType, ScType}
 
 import scala.annotation.tailrec
 import scala.util.Try
@@ -85,6 +85,8 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
     ty match {
       case x: StdType =>
         ast.StdType(x.name)
+      case x: ScLiteralType => // todo: [artem] this is a fallback when scala 2.13 is used, another solution needed
+        ast.StdType(x.wideType.asInstanceOf[ValType].name)
       case x: ScParameterizedType if x.designator.canonicalText.startsWith(ScalaTypes.FUNCTION_PREFIX) =>
         if (x.typeArguments.init.length == 1)
           FunctionType(genType(x.typeArguments.head), genType(x.typeArguments.last))
@@ -205,9 +207,9 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
   private def transform[T](psi: PsiElement): T =
     (psi match {
-      case psi: ScalaFile => //todo x --> sth else
+      case x: ScalaFile => //todo x --> sth else
         val underscores =
-          findUnderscores(psi)
+          findUnderscores(x)
             .flatMap(_.overExpr)
             .map { over =>
               val expr = gen[Expr](over)
@@ -219,8 +221,8 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           stateVal.set(ASTGeneratorState(underscores))
         ) {
           File(
-            psi.getPackageName,
-            genDefinitions(psi)
+            x.getPackageName,
+            genDefinitions(x)
               .filter {
                 case _: PsiClassWrapper => false
                 case y: ScObject if y.isSyntheticObject => false
@@ -332,9 +334,9 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case x: ScBlock =>
         BlockExpr(x.statements.map(gen[Expr]))
 
-      case psi: ScTuple =>
-        val arity = psi.exprs.length
-        val exprs = psi.exprs.map(gen[Expr])
+      case x: ScTuple =>
+        val arity = x.exprs.length
+        val exprs = x.exprs.map(gen[Expr])
         if (arity == 2) {
           NewExpr(GenericType(KotlinTypes.PAIR, exprs.map(_.exprType)), exprs)
         } else {
@@ -387,28 +389,28 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           case _ => referencedObject
         }
 
-      case psi: MethodInvocation =>
+      case x: MethodInvocation =>
         val paramsInfo =
-          psi.matchedParameters.map {
+          x.matchedParameters.map {
             case (_, p) => CallParameterInfo(genType(p.expectedType), p.isByName)
           }
 
-        val args = psi match {
+        val args = x match {
           case _: ScInfixExpr =>
-            Seq(psi.argsElement)
-          case _ => psi.argumentExpressions
+            Seq(x.argsElement)
+          case _ => x.argumentExpressions
         }
 
-        CallExpr(genType(psi.`type`()), gen[Expr](psi.getInvokedExpr), args.map(gen[Expr]), paramsInfo)
+        CallExpr(genType(x.`type`()), gen[Expr](x.getInvokedExpr), args.map(gen[Expr]), paramsInfo)
 
       case x: ScGenericCall =>
         gen[RefExpr](x.referencedExpr).copy(typeParams = genTypeArgs(x.typeArgs))
 
-      case psi: ScTypedExpression if psi.isSequenceArg =>
-        PrefixExpr(genType(psi.`type`()), gen[Expr](psi.expr), "*")
+      case x: ScTypedExpression if x.isSequenceArg =>
+        PrefixExpr(genType(x.`type`()), gen[Expr](x.expr), "*")
 
-      case psi: ScTypedExpression =>
-        Exprs.asExpr(gen[Expr](psi.expr), genType(psi.typeElement))
+      case x: ScTypedExpression =>
+        Exprs.asExpr(gen[Expr](x.expr), genType(x.typeElement))
 
       case x: ScIf =>
         IfExpr(genType(x.`type`()),

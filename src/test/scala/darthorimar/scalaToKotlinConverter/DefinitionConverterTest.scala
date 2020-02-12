@@ -102,4 +102,32 @@ class DefinitionConverterTest extends ConverterTestBase {
         |fun <T, K> List<T>.cast(): List<K> = this as List<K>
       """.stripMargin
     )
+
+  def testSquareDef(): Unit =
+    doTest(
+      """
+        |class A {
+        |  def square(x: Int) : Int = x * x
+        |}
+      """.stripMargin,
+      """
+        |open class A {
+        |  fun square(x: Int): Int = x * x
+        |}
+      """.stripMargin
+    )
+
+  def testX2Def(): Unit =
+    doTest(
+      """
+        |class A {
+        |  def x2(x: Int) : Int = x * 2
+        |}
+      """.stripMargin,
+      """
+        |open class A {
+        |  fun x2(x: Int): Int = x * 2
+        |}
+      """.stripMargin
+    )
 }
