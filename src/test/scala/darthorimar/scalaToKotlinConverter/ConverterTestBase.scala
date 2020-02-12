@@ -35,10 +35,9 @@ abstract class ConverterTestBase extends ScalaLightCodeInsightFixtureTestAdapter
 
     val convertedCode = inWriteCommand {
       val intermediateResult = converter.convertPsiElementToInternalRepresentation(scalaFile)
-      val result = converter.convertInternalRepresentationToText(intermediateResult.getFirst,
-        intermediateResult.getSecond, getProject)
-      val ktFile = createKtFile(result.getFirst)
-      converter.runPostProcessOperations(ktFile, result.getSecond)
+      val result = converter.convertInternalRepresentationToText(intermediateResult._1, intermediateResult._2, getProject)
+      val ktFile = createKtFile(result._1)
+      converter.runPostProcessOperations(ktFile, result._2)
       ktFile.getText
     }
 

@@ -21,17 +21,15 @@ class ScalaToKotlinLanguageConverter extends LanguageConverterExtension[AST, Con
 
   override def convertInternalRepresentationToText(representation: AST,
                                                    state: ConverterStepState,
-                                                   project: Project): kotlin.Pair[String, ConverterStepState] = {
+                                                   project: Project): (String, ConverterStepState) = {
     new AstToTextConverter(project).convert(representation, state)
   }
 
-  override def convertPsiElementToInternalRepresentation(element: PsiElement): kotlin.Pair[AST, ConverterStepState] =
+  override def convertPsiElementToInternalRepresentation(element: PsiElement): (AST, ConverterStepState) =
     element match {
       case scalaElement: ScalaPsiElement =>
         new ScalaPsiToAstConverter(element.getProject).convert(scalaElement, new ConverterStepState)
       case _ => null
     }
 
-  implicit private def scalaPairToKotlinPair[A, B](pair: (A, B)): kotlin.Pair[A, B] =
-    new kotlin.Pair(pair._1, pair._2)
 }

@@ -1,3 +1,1 @@
 rootProject.name = 'intellijScalaToKotlin'
-
-include(":converter-api")
