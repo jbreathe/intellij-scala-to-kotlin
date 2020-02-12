@@ -1,8 +1,5 @@
 package darthorimar.scalaToKotlinConverter.step
 
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiFile
 import darthorimar.scalaToKotlinConverter.ImplicitTransform
 import darthorimar.scalaToKotlinConverter.step.ConverterStep.Notifier
 import org.jetbrains.plugins.scala.extensions.inWriteAction
@@ -29,6 +26,4 @@ class InnerPsiTransformStep extends ConverterStep[ScalaPsiElement, ScalaPsiEleme
     }
     (result, state)
   }
-
-  def noOp(list: List[TextRange], file: PsiFile, doc: Document): Unit = {}
 }

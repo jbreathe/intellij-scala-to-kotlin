@@ -1,28 +1,19 @@
 package darthorimar.scalaToKotlinConverter.step.transform
 
-import darthorimar.scalaToKotlinConverter
-import darthorimar.scalaToKotlinConverter.ast.{ PostfixExpr, _ }
-import darthorimar.scalaToKotlinConverter.scopes._
+import darthorimar.scalaToKotlinConverter.ast.{PostfixExpr, _}
 import darthorimar.scalaToKotlinConverter.scopes.ScopedVal.scoped
+import darthorimar.scalaToKotlinConverter.scopes._
 import darthorimar.scalaToKotlinConverter.step.ConverterStep.Notifier
-import darthorimar.scalaToKotlinConverter.step.{ ConverterStep, ConverterStepState }
+import darthorimar.scalaToKotlinConverter.step.{ConverterStep, ConverterStepState}
 
 abstract class Transform extends ConverterStep[AST, AST] {
-  protected val action: PartialFunction[AST, AST]
-
-  val renamerVal   = new ScopedVal[Renamer](Renamer(Map.empty))
-  val namerVal     = new ScopedVal[LocalNamer](new LocalNamer)
+  val renamerVal = new ScopedVal[Renamer](Renamer(Map.empty))
+  val namerVal = new ScopedVal[LocalNamer](new LocalNamer)
   val stateStepVal = new ScopedVal[ConverterStepState](new ConverterStepState)
-
-  var context: File = null
+  protected val action: PartialFunction[AST, AST]
+  var context: File = _
 
   private var parentsStack = List.empty[AST]
-
-  protected def parents: List[AST] =
-    parentsStack.tail
-
-  protected def parent: AST =
-    parents.head
 
   def transform[T <: AST](ast: AST): T = {
     parentsStack = ast :: parentsStack
@@ -39,6 +30,12 @@ abstract class Transform extends ConverterStep[AST, AST] {
       val result = transform[AST](from)
       (result, stateStepVal)
     }
+
+  protected def parent: AST =
+    parents.head
+
+  protected def parents: List[AST] =
+    parentsStack.tail
 
   protected def copy[T <: AST](ast: AST): T =
     (ast match {
@@ -132,16 +129,16 @@ abstract class Transform extends ConverterStep[AST, AST] {
       case imp: Import =>
         imp
 
-      case x @ File(pckg, definitions) =>
+      case x@File(pckg, definitions) =>
         context = x
         File(pckg, definitions.map(transform[DefExpr]))
 
       case InfixExpr(exprType, op, left, right, isLeftAssoc) =>
         InfixExpr(transform[Type](exprType),
-                  transform[RefExpr](op),
-                  transform[Expr](left),
-                  transform[Expr](right),
-                  isLeftAssoc)
+          transform[RefExpr](op),
+          transform[Expr](left),
+          transform[Expr](right),
+          isLeftAssoc)
 
       case ParenthesesExpr(inner) =>
         ParenthesesExpr(transform[Expr](inner))
@@ -151,9 +148,9 @@ abstract class Transform extends ConverterStep[AST, AST] {
 
       case CallExpr(exprType, ref, arguments, paramsExpectedTypes) =>
         CallExpr(transform[Type](exprType),
-                 transform[Expr](ref),
-                 arguments.map(transform[Expr]),
-                 paramsExpectedTypes.map(transform[CallParameterInfo]))
+          transform[Expr](ref),
+          arguments.map(transform[Expr]),
+          paramsExpectedTypes.map(transform[CallParameterInfo]))
 
       case CallParameterInfo(expectedType, isCallByName) =>
         CallParameterInfo(transform[Type](expectedType), isCallByName)
@@ -208,15 +205,15 @@ abstract class Transform extends ConverterStep[AST, AST] {
 
       case ScalaTryExpr(exprType, tryBlock, catchBlock, finallyBlock) =>
         ScalaTryExpr(transform[Type](exprType),
-                     transform[Expr](tryBlock),
-                     catchBlock.map(transform[ScalaCatch]),
-                     finallyBlock.map(transform[Expr]))
+          transform[Expr](tryBlock),
+          catchBlock.map(transform[ScalaCatch]),
+          finallyBlock.map(transform[Expr]))
 
       case KotlinTryExpr(exprType, tryBlock, catchCases, finallyBlock) =>
         KotlinTryExpr(transform[Type](exprType),
-                      transform[Expr](tryBlock),
-                      catchCases.map(transform[KotlinCatchCase]),
-                      finallyBlock.map(transform[Expr]))
+          transform[Expr](tryBlock),
+          catchCases.map(transform[KotlinCatchCase]),
+          finallyBlock.map(transform[Expr]))
 
       case ScalaCatch(cases) =>
         ScalaCatch(cases.map(transform[MatchCaseClause]))
@@ -230,8 +227,8 @@ abstract class Transform extends ConverterStep[AST, AST] {
       case FunctionType(left, right) =>
         FunctionType(transform[Type](left), transform[Type](right))
 
-      case ProductType(exprTypepes) =>
-        ProductType(exprTypepes.map(transform[Type]))
+      case ProductType(exprTypes) =>
+        ProductType(exprTypes.map(transform[Type]))
 
       case StdType(name) =>
         StdType(name)
@@ -272,8 +269,8 @@ abstract class Transform extends ConverterStep[AST, AST] {
       case LitPattern(lit, label) =>
         LitPattern(transform[Expr](lit), label)
 
-      //    case TuplePattern(parts, label) =>
-      //      TuplePattern(parts.map(transform[CasePattern]), label)
+      //case TuplePattern(parts, label) =>
+      //  TuplePattern(parts.map(transform[CasePattern]), label)
 
       case ConstructorPattern(ref, args, label, repr) =>
         ConstructorPattern(transform[ConstructorRef](ref), args.map(transform[CasePattern]), label, repr)
@@ -281,8 +278,8 @@ abstract class Transform extends ConverterStep[AST, AST] {
       case CaseClassConstructorRef(ty) =>
         CaseClassConstructorRef(transform[Type](ty))
 
-      case UnapplyCallConstuctorRef(objectName, unapplyReturnType) =>
-        UnapplyCallConstuctorRef(objectName, transform[Type](unapplyReturnType))
+      case UnapplyCallConstructorRef(objectName, unapplyReturnType) =>
+        UnapplyCallConstructorRef(objectName, transform[Type](unapplyReturnType))
 
       case TypedPattern(ref, exprType, label) =>
         TypedPattern(ref, transform[Type](exprType), label)

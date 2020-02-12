@@ -17,16 +17,12 @@ allprojects {
         mavenCentral()
     }
 
-
     intellij {
         version = "IC-2019.3"
         setPlugins("Kotlin", "java", "org.intellij.scala:2019.3.23")
     }
     version = "0.1.1"
 }
-
-
-
 
 spotless {
     isEnforceCheck = false

@@ -21,21 +21,18 @@
 
     <idea-version since-build="193"/>
 
-
-    <!--Converter API -->
+    <!-- Converter API -->
     <extensionPoints>
         <extensionPoint qualifiedName="com.intellij.languageConverter"
                         interface="darthorimar.languageConversion.LanguageConverterExtension"/>
     </extensionPoints>
 
-
     <extensions defaultExtensionNs="com.intellij">
         <languageConverter
                 implementation="darthorimar.scalaToKotlinConverter.ScalaToKotlinLanguageConverter"/>
         <copyPastePostProcessor
-                implementation="darthorimar.languageConversion.ConvertOnCopyPastPostProcessor"/>
+                implementation="darthorimar.languageConversion.ConvertOnCopyPastePostProcessor"/>
     </extensions>
-
 
     <application-components>
         <component>
@@ -43,6 +40,5 @@
             </implementation-class>
         </component>
     </application-components>
-
 
 </idea-plugin>

@@ -16,12 +16,12 @@ object Utils {
   def getSrcDir(psi: PsiElement): PsiDirectory = {
     def byPackageName(packageName: String): PsiDirectory = {
       if (packageName.nonEmpty) {
-        val packageParts  = packageName.split('.')
+        val packageParts = packageName.split('.')
         val fileDirectory = psi.getContainingFile.getContainingDirectory
-        val packagePath   = packageParts.mkString("/")
+        val packagePath = packageParts.mkString("/")
         if (fileDirectory.getVirtualFile.getCanonicalPath.endsWith(packagePath)) {
-          val goUp         = (_: PsiDirectory).getParent
-          val levelsUp     = packageParts.length
+          val goUp = (_: PsiDirectory).getParent
+          val levelsUp = packageParts.length
           val getDirectory = Function.chain(Seq.fill(levelsUp)(goUp))
           getDirectory(fileDirectory)
         } else fileDirectory
@@ -42,10 +42,10 @@ object Utils {
     s"`$name`".replaceAllLiterally(":", "")
 
   def prettyPrint(a: Any, indentSize: Int = 2, depth: Int = 0): String = {
-    val indent      = " " * depth * indentSize
+    val indent = " " * depth * indentSize
     val fieldIndent = indent + (" " * indentSize)
-    val thisDepth   = prettyPrint(_: Any, indentSize, depth)
-    val nextDepth   = prettyPrint(_: Any, indentSize, depth + 1)
+    val thisDepth = prettyPrint(_: Any, indentSize, depth)
+    val nextDepth = prettyPrint(_: Any, indentSize, depth + 1)
     a match {
       case t: Type =>
         t.asKotlin
@@ -65,15 +65,15 @@ object Utils {
         result.substring(0, result.length - 1) + "\n" + indent + ")"
       case p: Product =>
         val prefix = p.productPrefix
-        val cls    = p.getClass
+        val cls = p.getClass
         val fields = cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
         val values = p.productIterator.toSeq
         if (fields.length != values.length) return p.toString
         fields.zip(values).toList match {
-          case Nil               => p.toString
+          case Nil => p.toString
           case (_, value) :: Nil => s"$prefix(${thisDepth(value)})"
-          case kvps =>
-            val prettyFields = kvps.map { case (k, v) => s"$fieldIndent$k = ${nextDepth(v)}" }
+          case kvPairs =>
+            val prettyFields = kvPairs.map { case (k, v) => s"$fieldIndent$k = ${nextDepth(v)}" }
             s"$prefix(\n${prettyFields.mkString(",\n")}\n$indent)"
         }
       case _ => a.toString

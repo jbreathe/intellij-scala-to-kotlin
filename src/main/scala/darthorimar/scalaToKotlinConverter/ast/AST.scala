@@ -1,7 +1,5 @@
 package darthorimar.scalaToKotlinConverter.ast
 
-import darthorimar.scalaToKotlinConverter.definition.Definition
-
 trait AST
 
 trait ErrorAst extends AST {
@@ -46,7 +44,7 @@ case class CompositePattern(parts: Seq[CasePattern], label: Option[String]) exte
 
 case class LitPattern(expr: Expr, label: Option[String]) extends CasePattern {
   override def representation: String = expr match {
-    case LitExpr(_, name)         => name
+    case LitExpr(_, name) => name
     case RefExpr(_, _, ref, _, _) => ref
   }
 }
@@ -55,13 +53,13 @@ trait ConstructorRef extends AST
 
 case class CaseClassConstructorRef(name: Type) extends ConstructorRef
 
-case class UnapplyCallConstuctorRef(objectName: String, unapplyReturnType: Type) extends ConstructorRef
+case class UnapplyCallConstructorRef(objectName: String, unapplyReturnType: Type) extends ConstructorRef
 
 case class ConstructorPattern(ref: ConstructorRef,
                               patterns: Seq[CasePattern],
                               label: Option[String],
                               representation: String)
-    extends CasePattern {
+  extends CasePattern {
   override def isConstructorPattern: Boolean = true
 }
 
@@ -113,7 +111,10 @@ case class RefWithQualifier(qualifier: Option[String], ref: String) extends AST 
   def qualified: String = qualifier.map(_ + ".").getOrElse("") + ref
 }
 
-trait KotlinValDestructor                                       extends AST
-case class ReferenceKotlinValDestructor(reference: String)      extends KotlinValDestructor
-case object WildcardKotlinValDestructor                         extends KotlinValDestructor
+trait KotlinValDestructor extends AST
+
+case class ReferenceKotlinValDestructor(reference: String) extends KotlinValDestructor
+
+case object WildcardKotlinValDestructor extends KotlinValDestructor
+
 case class TypedKotlinValDestructor(ref: String, valType: Type) extends KotlinValDestructor

@@ -11,7 +11,6 @@ import org.jetbrains.plugins.scala.lang.psi.api.ScalaFile
 import org.junit.Assert._
 
 abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAdapter {
-
   private def formatKotlinCode(unformattedCode: String): String = {
     // convert all line separators to "\n"
     val codeWithUnifiedLineSeparators = StringUtil.convertLineSeparators(unformattedCode)
@@ -27,7 +26,6 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
       .createFileFromText("dummy.kt", KotlinLanguage.INSTANCE, text, true, false)
       .asInstanceOf[KtFile]
   }
-
 
   def doTest(scala: String, kotlin: String): Unit = {
     configureFromFileTextAdapter("dummy.scala", scala)
@@ -71,5 +69,4 @@ abstract class ConverterTestBase extends ScalaLightPlatformCodeInsightTestCaseAd
 
     doTest(s"def a = {$scala \n 42}", formatKotlinCode(newString))
   }
-
 }

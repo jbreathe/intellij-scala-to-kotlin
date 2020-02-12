@@ -10,8 +10,7 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.plugins.scala.ScalaLanguage
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 
-class ScalaToKotlinLanguageConverter extends LanguageConverterExtension[AST, ConverterStepState](
-  ScalaLanguage.INSTANCE, KotlinLanguage.INSTANCE) {
+class ScalaToKotlinLanguageConverter extends LanguageConverterExtension[AST, ConverterStepState](ScalaLanguage.INSTANCE, KotlinLanguage.INSTANCE) {
 
   override def runPostProcessOperations(element: PsiElement, internalState: ConverterStepState): Unit =
     element match {

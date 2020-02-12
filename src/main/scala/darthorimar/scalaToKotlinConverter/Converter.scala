@@ -10,7 +10,6 @@ import darthorimar.scalaToKotlinConverter.step.transform._
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.plugins.scala.lang.psi.api.ScalaPsiElement
 
-
 class PostProcessOperationConverter(protect: Project) extends Converter[KtElement, KtElement](protect) {
   override def convert(from: KtElement, state: ConverterStepState): Result[KtElement] = {
     val converter: ConverterStep[KtElement, KtElement] =
@@ -20,7 +19,6 @@ class PostProcessOperationConverter(protect: Project) extends Converter[KtElemen
     converter(from, state, 0, notifier(stepsCount = 2, s"Converting file ${from.getContainingFile.getName}"))
   }
 }
-
 
 class ScalaPsiToAstConverter(protect: Project) extends Converter[ScalaPsiElement, AST](protect) {
   override def convert(from: ScalaPsiElement, state: ConverterStepState): Result[AST] = {
@@ -49,6 +47,8 @@ class AstToTextConverter(protect: Project) extends Converter[AST, String](protec
 }
 
 abstract class Converter[From, To](project: Project) {
+
+  val title = "Converting Scala to Kotlin"
 
   def convert(from: From, state: ConverterStepState): Result[To]
 
@@ -92,7 +92,4 @@ abstract class Converter[From, To](project: Project) {
       result
     }
   }
-
-
-  val title = "Converting Scala to Kotlin"
 }

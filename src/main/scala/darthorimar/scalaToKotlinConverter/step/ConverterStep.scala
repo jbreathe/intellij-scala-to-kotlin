@@ -1,6 +1,6 @@
 package darthorimar.scalaToKotlinConverter.step
 
-import ConverterStep._
+import darthorimar.scalaToKotlinConverter.step.ConverterStep._
 
 trait ConverterStep[From, To] {
   self =>
@@ -25,8 +25,9 @@ object ConverterStep {
   trait Notifier {
     def notify(step: ConverterStep[_, _], index: Int)
   }
+
   object Notifier {
-    val empty: Notifier = (step: ConverterStep[_, _], index: Int) => {}
+    val empty: Notifier = (_: ConverterStep[_, _], _: Int) => {}
   }
 
 }

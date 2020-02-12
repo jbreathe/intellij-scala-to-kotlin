@@ -1,20 +1,11 @@
 package darthorimar.languageConversion
 
-import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.lang.Language
-import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.extensions.AbstractExtensionPointBean
 import com.intellij.openapi.extensions.ExtensionPointName
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
-import com.intellij.util.containers.isNullOrEmpty
-import org.jetbrains.kotlin.idea.refactoring.project
 
 /**
  * Add support of converting one language to another.
@@ -27,7 +18,7 @@ import org.jetbrains.kotlin.idea.refactoring.project
  *
  * [InternalRepresentation] stores data which will be collected by [convertPsiElementToInternalRepresentation] method
  * while copying code
- * [ConverterState] a internal state of converter which may be used to pass infromation
+ * [ConverterState] a internal state of converter which may be used to pass information
  * during conversion steps
  *
  * @param languageFrom language to convert from
@@ -69,4 +60,3 @@ abstract class LanguageConverterExtension<InternalRepresentation, ConverterState
         val EP_NAME = ExtensionPointName.create<LanguageConverterExtension<*, *>>("com.intellij.languageConverter")
     }
 }
-

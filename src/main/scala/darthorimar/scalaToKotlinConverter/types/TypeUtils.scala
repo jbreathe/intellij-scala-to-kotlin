@@ -35,7 +35,7 @@ object TypeUtils {
   object ListType {
     def unapply(t: Type): Option[Type] = t match {
       case GenericType(KotlinTypes.LIST, Seq(of)) => Some(of)
-      case _                                      => None
+      case _ => None
     }
   }
 

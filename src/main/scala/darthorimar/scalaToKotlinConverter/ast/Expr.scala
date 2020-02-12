@@ -1,7 +1,6 @@
 package darthorimar.scalaToKotlinConverter.ast
 
-import darthorimar.scalaToKotlinConverter.ast
-import darthorimar.scalaToKotlinConverter.types.{ KotlinTypes, StdTypes }
+import darthorimar.scalaToKotlinConverter.types.StdTypes
 
 sealed trait Expr extends AST {
   def exprType: Type
@@ -22,7 +21,7 @@ case class ParenthesesExpr(inner: Expr) extends Expr {
 }
 
 case class CallExpr(exprType: Type, ref: Expr, params: Seq[Expr], paramsExpectedTypes: Seq[CallParameterInfo])
-    extends Expr
+  extends Expr
 
 case class LitExpr(exprType: Type, name: String) extends Expr
 
@@ -33,7 +32,7 @@ case class RefExpr(exprType: Type,
                    referenceName: String,
                    typeParams: Seq[Type],
                    isFunctionRef: Boolean)
-    extends Expr
+  extends Expr
 
 case class PostfixExpr(exprType: Type, expr: Expr, op: String) extends Expr
 
@@ -78,10 +77,10 @@ case class ReturnExpr(label: Option[String], expr: Option[Expr]) extends Expr {
 }
 
 case class ScalaTryExpr(exprType: Type, tryBlock: Expr, catchBlock: Option[ScalaCatch], finallyBlock: Option[Expr])
-    extends Expr
+  extends Expr
 
 case class KotlinTryExpr(exprType: Type, tryBlock: Expr, catchBlock: Seq[KotlinCatchCase], finallyBlock: Option[Expr])
-    extends Expr
+  extends Expr
 
 case class TypeExpr(exprType: Type) extends Expr
 
@@ -123,7 +122,7 @@ case class Defn(attributes: Seq[Attribute],
                 supersBlock: Option[SupersBlock],
                 body: Option[BlockExpr],
                 companionDefn: Option[CompanionModule])
-    extends DefExpr {
+  extends DefExpr {
   override def exprType: Type = NoType
 
   override def isDefn: Boolean = true
@@ -146,17 +145,17 @@ trait ValOrVarDef extends DefExpr {
 }
 
 case class ScalaValOrVarDef(attributes: Seq[Attribute], isVal: Boolean, pattern: ConstructorPattern, expr: Expr)
-    extends ValOrVarDef
+  extends ValOrVarDef
 
 case class KotlinValOrVarDef(attributes: Seq[Attribute], isVal: Boolean, patterns: Seq[KotlinValDestructor], expr: Expr)
-    extends ValOrVarDef
+  extends ValOrVarDef
 
 case class SimpleValOrVarDef(attributes: Seq[Attribute],
                              isVal: Boolean,
                              name: String,
                              valType: Option[Type],
                              expr: Option[Expr])
-    extends ValOrVarDef
+  extends ValOrVarDef
 
 case class LazyValDef(attributes: Seq[Attribute], name: String, valType: Type, expr: Expr) extends ValOrVarDef {
   override def isVal: Boolean = true
@@ -169,4 +168,4 @@ case class DefnDef(attributes: Seq[Attribute],
                    parameters: Seq[DefParameter],
                    returnType: Type,
                    body: Option[Expr])
-    extends DefExpr
+  extends DefExpr

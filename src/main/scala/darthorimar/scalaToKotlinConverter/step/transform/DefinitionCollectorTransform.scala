@@ -5,8 +5,11 @@ import darthorimar.scalaToKotlinConverter.definition.Definition
 import darthorimar.scalaToKotlinConverter.types._
 
 class DefinitionCollectorTransform extends Transform {
-  override def name: String = "Collecting used definitions"
-
+  override protected val action: PartialFunction[AST, AST] = {
+    case c@CallExpr(_, RefExpr(_, Some(expr), name, _, _), _, _) if calls.isDefinedAt((expr.exprType, name)) =>
+      stateStepVal.addDefinition(calls((expr.exprType, name)))
+      copy[CallExpr](c)
+  }
   val calls: PartialFunction[(Type, String), Definition] = {
     case (GenericType(KotlinTypes.LIST, Seq(GenericType(ClassType("Tuple3"), _))), "unzip3") =>
       Definition.unzip3
@@ -16,9 +19,5 @@ class DefinitionCollectorTransform extends Transform {
       Definition.stripSuffix
   }
 
-  override protected val action: PartialFunction[AST, AST] = {
-    case c @ CallExpr(_, RefExpr(_, Some(expr), name, _, _), _, _) if calls.isDefinedAt((expr.exprType, name)) =>
-      stateStepVal.addDefinition(calls((expr.exprType, name)))
-      copy[CallExpr](c)
-  }
+  override def name: String = "Collecting used definitions"
 }

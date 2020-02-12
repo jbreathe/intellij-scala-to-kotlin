@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
-internal class ConvertOnCopyPastPostProcessor : CopyPastePostProcessor<ConverterTransferableData<*, *>>() {
+internal class ConvertOnCopyPastePostProcessor : CopyPastePostProcessor<ConverterTransferableData<*, *>>() {
     override fun collectTransferableData(file: PsiFile?,
                                          editor: Editor?,
                                          startOffsets: IntArray?,

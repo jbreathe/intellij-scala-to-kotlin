@@ -3,9 +3,6 @@ package darthorimar.languageConversion
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.components.ApplicationComponent
-import com.intellij.openapi.extensions.ExtensionPoint
-import com.intellij.openapi.extensions.Extensions
-import org.jdom.Element
 
 internal class LanguageConverterApplicationComponent : ApplicationComponent {
     override fun initComponent() {
@@ -14,7 +11,6 @@ internal class LanguageConverterApplicationComponent : ApplicationComponent {
             registerConvertAction(converter)
         }
     }
-
 
     private fun registerConvertAction(converter: LanguageConverterExtension<*, *>) {
         val actionManager = ActionManager.getInstance()

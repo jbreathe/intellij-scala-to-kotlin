@@ -1,7 +1,6 @@
 package darthorimar.scalaToKotlinConverter.step.transform
 
 import darthorimar.scalaToKotlinConverter.ast._
-import darthorimar.scalaToKotlinConverter.types.TypeUtils.WithType
 
 object Helpers {
 

@@ -1,23 +1,12 @@
 package darthorimar.scalaToKotlinConverter.step.transform
 
-import darthorimar.scalaToKotlinConverter
-import darthorimar.scalaToKotlinConverter.types._
 import darthorimar.scalaToKotlinConverter.ast._
-import darthorimar.scalaToKotlinConverter.definition.{ Definition, TupleDefinition }
-import darthorimar.scalaToKotlinConverter.step.{ ConverterStep, ConverterStepState }
-import darthorimar.scalaToKotlinConverter.types.TypeUtils.{ OptionType, ScalaTuple }
+import darthorimar.scalaToKotlinConverter.definition.Definition
+import darthorimar.scalaToKotlinConverter.step.{ConverterStep, ConverterStepState}
+import darthorimar.scalaToKotlinConverter.types.TypeUtils.{OptionType, ScalaTuple}
+import darthorimar.scalaToKotlinConverter.types._
 
 class TypeTransform extends Transform {
-  override def name: String = "Transforming types"
-
-  override def apply(from: AST,
-                     state: ConverterStepState,
-                     index: Int,
-                     notifier: ConverterStep.Notifier): (AST, ConverterStepState) = {
-    val r = super.apply(from, state, index, notifier)
-    r
-  }
-
   override protected val action: PartialFunction[AST, AST] = {
     case FunctionType(ProductType(Seq(left)), right) =>
       FunctionType(transform[Type](left), transform[Type](right))
@@ -53,7 +42,7 @@ class TypeTransform extends Transform {
       GenericType(KotlinTypes.LIST, Seq(StdTypes.NOTHING))
 
     case ScalaTypes.SEQ | ScalaTypes.LIST | ScalaTypes.COLLECTION_IMMUTABLE_LIST | ScalaTypes.COLLECTION_LIST |
-        ScalaTypes.COLLECTION_SEQ =>
+         ScalaTypes.COLLECTION_SEQ =>
       KotlinTypes.LIST
 
     case SimpleType(name) if name.startsWith("_root_.") =>
@@ -61,5 +50,15 @@ class TypeTransform extends Transform {
 
     case SimpleType("scala.collection.immutable.Nil.type") =>
       GenericType(KotlinTypes.LIST, Seq(NoType))
+  }
+
+  override def name: String = "Transforming types"
+
+  override def apply(from: AST,
+                     state: ConverterStepState,
+                     index: Int,
+                     notifier: ConverterStep.Notifier): (AST, ConverterStepState) = {
+    val r = super.apply(from, state, index, notifier)
+    r
   }
 }

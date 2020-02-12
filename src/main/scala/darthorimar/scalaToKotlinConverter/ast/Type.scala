@@ -2,6 +2,7 @@ package darthorimar.scalaToKotlinConverter.ast
 
 sealed trait Type extends AST {
   def asKotlin: String
+
   def isFunction: Boolean = false
 }
 
@@ -9,8 +10,8 @@ case class FunctionType(left: Type, right: Type) extends Type {
   override def asKotlin: String = {
     val leftStr = left match {
       case StdType("Unit") => "()"
-      case t: ProductType  => t.asKotlin
-      case t               => s"(${t.asKotlin})"
+      case t: ProductType => t.asKotlin
+      case t => s"(${t.asKotlin})"
     }
     s"$leftStr -> ${right.asKotlin}"
   }
@@ -32,6 +33,7 @@ case class ProductType(types: Seq[Type]) extends Type {
   override def asKotlin: String =
     types.map(_.asKotlin).mkString("(", ", ", ")")
 }
+
 case class SimpleType(name: String) extends Type {
   override def asKotlin: String = name
 }
@@ -69,19 +71,24 @@ case class ErrorType(text: String) extends Type with ErrorAst {
 }
 
 case class TypeParam(name: String, variance: TypeParamVariance, upperBound: Option[Type], lowerBound: Option[Type])
-    extends AST
+  extends AST
 
 sealed trait TypeParamVariance {
   def kotlinKeyword: String
+
   def isInvariant: Boolean = false
 }
+
 case object InvariantTypeParam extends TypeParamVariance {
   override def kotlinKeyword: String = ""
-  override def isInvariant: Boolean  = true
+
+  override def isInvariant: Boolean = true
 }
+
 case object CovariantTypeParam extends TypeParamVariance {
   override def kotlinKeyword: String = "out"
 }
+
 case object ContravariantTypeParam extends TypeParamVariance {
   override def kotlinKeyword: String = "in"
 }

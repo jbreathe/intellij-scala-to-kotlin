@@ -19,8 +19,6 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.{ScFunction, ScFuncti
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.templates.ScTemplateParents
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
-import org.jetbrains.plugins.scala.lang.psi.impl.expr.{ScForBindingImpl, ScNewTemplateDefinitionImpl}
-import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.ScClassImpl
 import org.jetbrains.plugins.scala.lang.psi.light.PsiClassWrapper
 import org.jetbrains.plugins.scala.lang.psi.types.api.designator.{DesignatorOwner, ScProjectionType, ScThisType}
 import org.jetbrains.plugins.scala.lang.psi.types.api.{JavaArrayType, StdType, TypeParameterType}
@@ -87,7 +85,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
     ty match {
       case x: StdType =>
         ast.StdType(x.name)
-      case x: ScParameterizedType if x.designator.canonicalText.startsWith(ScalaTypes.FUNCTION_PREFFIX) =>
+      case x: ScParameterizedType if x.designator.canonicalText.startsWith(ScalaTypes.FUNCTION_PREFIX) =>
         if (x.typeArguments.init.length == 1)
           FunctionType(genType(x.typeArguments.head), genType(x.typeArguments.last))
         else
@@ -100,7 +98,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         FunctionType(ProductType(x.params.map(t => genType(t.paramType))), genType(x.result))
       case x: DesignatorOwner =>
         x.extractClass.map {
-          case c: ScClassImpl => createTypeByName(c.qualifiedName)
+          case c: ScClass => createTypeByName(c.qualifiedName)
           case c: PsiClass => createTypeByName(c.getQualifiedName)
         } orElse {
           x.extractDesignatorSingleton.map(genType)
@@ -113,7 +111,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         genType(x.quantified)
       case x: TypeParameterType =>
         TypeParamType(gen[TypeParam](x.typeParameter.psiTypeParameter))
-      case x: ScExistentialArgument =>
+      case _: ScExistentialArgument =>
         SimpleType("*")
       case x: JavaArrayType =>
         GenericType(KotlinTypes.ARRAY, Seq(genType(x.argument)))
@@ -247,7 +245,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           case _ => None
         }
 
-        val overrideConstuctParamsDefs =
+        val overrideConstructorParamsDefs =
           typeDef match {
             case cls: ScClass =>
               cls.constructor.toSeq
@@ -290,7 +288,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
           typeDef.typeParameters.map(gen[TypeParam]),
           construct,
           typeDef.extendsBlock.templateParents.map(gen[SupersBlock]),
-          blockOrNone(overrideConstuctParamsDefs ++ typeDef.extendsBlock.members.map(gen[DefExpr])),
+          blockOrNone(overrideConstructorParamsDefs ++ typeDef.extendsBlock.members.map(gen[DefExpr])),
           companionDefn
         )
 
@@ -362,7 +360,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         }
 
         val ty = genType(x.`type`())
-        val binded = x.bind().get
+        val bound = x.bind().get
         val isFunc = {
           val sourceElement = x.getReference.resolve()
           sourceElement.isInstanceOf[ScFunction] || sourceElement.isInstanceOf[PsiMethod]
@@ -370,14 +368,14 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
 
         val refName =
           if (x.smartQualifier.isDefined) x.refName
-          else canonicalName(binded.getActualElement, containingClass(x).orNull)
+          else canonicalName(bound.getActualElement, containingClass(x).orNull)
 
         val referencedObject =
           RefExpr(ty, x.smartQualifier.map(gen[Expr]), refName, Seq.empty, isFunc)
 
-        binded.innerResolveResult.getOrElse(binded).element match {
+        bound.innerResolveResult.getOrElse(bound).element match {
           case target: PsiNamedElement if x.refName != target.name && target.name == "apply" =>
-            val refType = binded.getActualElement match {
+            val refType = bound.getActualElement match {
               case typeable: Typeable => genType(typeable.`type`())
               case _ => ty
             }
@@ -463,14 +461,14 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         })
         val isCaseClass =
           obj.flatMap(_.baseCompanionModule).exists(_.isCase)
-        val constuctorRef = (obj, unapplyRef) match {
+        val constructorRef = (obj, unapplyRef) match {
           case (Some(o), Some(r)) if !isCaseClass =>
-            UnapplyCallConstuctorRef(o.name, genType(r.returnType))
+            UnapplyCallConstructorRef(o.name, genType(r.returnType))
           case _ =>
             val className = canonicalName(x.ref.resolve(), null).stripSuffix(".unapply")
             CaseClassConstructorRef(createTypeByName(className))
         }
-        ConstructorPattern(constuctorRef, x.args.patterns.map(gen[CasePattern]), None, x.getText)
+        ConstructorPattern(constructorRef, x.args.patterns.map(gen[CasePattern]), None, x.getText)
 
       case x: ScTypedPattern =>
         TypedPattern(x.name, genType(x.typePattern.map(_.typeElement)), None)
@@ -520,7 +518,7 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
       case x: ScAssignment =>
         AssignExpr(gen[Expr](x.leftExpression), gen[Expr](x.rightExpression.get))
 
-      case x: ScNewTemplateDefinitionImpl =>
+      case x: ScNewTemplateDefinition =>
         NewExpr(genType(Some(x.constructorInvocation.get.typeElement)),
           x.constructorInvocation.get.args.toSeq.flatMap(_.exprs).map(gen[Expr]))
 
@@ -568,10 +566,9 @@ class ASTGenerationStep extends ConverterStep[ScalaPsiElement, AST] {
         ForGuard(gen[Expr](x.expr.get))
 
       case x: ScEnumerator =>
-        // todo: [artem] Can we get a pattern and an expression without cast to ScForBindingImpl?
-        val impl = x.asInstanceOf[ScForBindingImpl]
-        ForVal(ast.SimpleValOrVarDef(Seq.empty, isVal = true, impl.pattern.getText, None,
-          Some(gen[Expr](impl.expr.get))))
+        val scFor = x.asInstanceOf[ScForBinding]
+        ForVal(ast.SimpleValOrVarDef(Seq.empty, isVal = true, scFor.pattern.getText, None,
+          Some(gen[Expr](scFor.expr.get))))
 
       case x: ScTypeParam =>
         import org.jetbrains.plugins.scala.lang.psi.types.api._

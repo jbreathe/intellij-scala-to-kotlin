@@ -3,26 +3,51 @@ package darthorimar.scalaToKotlinConverter.inspection
 import com.intellij.codeInspection._
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.{ PsiElement, PsiFile }
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.{PsiElement, PsiFile}
+import darthorimar.scalaToKotlinConverter.inspection.DefaultInspection._
 import org.jetbrains.kotlin.idea.inspections.AbstractKotlinInspection
 import org.jetbrains.kotlin.idea.intentions.SelfTargetingIntention
 import org.jetbrains.kotlin.idea.quickfix.QuickFixActionBase
-import org.jetbrains.kotlin.psi.{ KtBlockExpression, KtElement }
-
-import scala.collection.mutable
-import darthorimar.scalaToKotlinConverter.inspection.DefaultInspection._
+import org.jetbrains.kotlin.psi.{KtBlockExpression, KtElement}
 import org.jetbrains.kotlin.resolve.diagnostics.Diagnostics
-import collection.JavaConverters._
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 class DefaultInspection(inspection: AbstractKotlinInspection) extends Inspection {
+  override def createAction(element: KtElement,
+                            project: Project,
+                            file: PsiFile,
+                            diagnostics: Diagnostics): Option[Fix] = {
+    val holder = new ProblemsHolder(InspectionManager.getInstance(project), file, false)
+    val visitor = inspection.buildVisitor(holder, false)
+    element.accept(visitor)
+    val actions = holder.getResults.asScala flatMap { descriptor =>
+      descriptor.getFixes collectFirst {
+        case f: LocalQuickFix => f
+      } map { fix =>
+        () =>
+          applySmartFix(fix, descriptor, project)
+      }
+    }
+    if (actions.isEmpty) None
+    else {
+      val fixAction = actions.reduce((acc, f) => () => {
+        acc()
+        f()
+      })
+      Some(Fix(fixAction))
+    }
+  }
+
   private def applySmartFix[D <: CommonProblemDescriptor](fix: QuickFix[D], descriptor: D, project: Project): Unit = {
     (descriptor, fix) match {
       case (problemDescriptor: ProblemDescriptor, intentionFix: IntentionWrapper) =>
         def applySelfTargetingIntention(action: SelfTargetingIntention[PsiElement]): Unit = {
           val target =
             action.getTargetByOffset(problemDescriptor.getPsiElement.getTextRange.getStartOffset,
-                                     problemDescriptor.getPsiElement.getContainingFile)
+              problemDescriptor.getPsiElement.getContainingFile)
           if (target == null) return
           if (!action.isApplicableTo(target, problemDescriptor.getPsiElement.getTextRange.getStartOffset)) return
           action.applyTo(target, null)
@@ -35,8 +60,8 @@ class DefaultInspection(inspection: AbstractKotlinInspection) extends Inspection
 
         intentionFix.getAction match {
           case action: SelfTargetingIntention[PsiElement] => applySelfTargetingIntention(action)
-          case action: QuickFixActionBase[PsiElement]     => applyQuickFixActionBase(action)
-          case _                                          =>
+          case action: QuickFixActionBase[PsiElement] => applyQuickFixActionBase(action)
+          case _ =>
         }
 
       case _ =>
@@ -44,35 +69,14 @@ class DefaultInspection(inspection: AbstractKotlinInspection) extends Inspection
 
     fix.applyFix(project, descriptor)
   }
-
-  override def createAction(element: KtElement,
-                            project: Project,
-                            file: PsiFile,
-                            diagnostics: Diagnostics): Option[Fix] = {
-    val holder  = new ProblemsHolder(InspectionManager.getInstance(project), file, false)
-    val visitor = inspection.buildVisitor(holder, false)
-    element.accept(visitor)
-    val actions = holder.getResults.asScala flatMap { descriptor =>
-      descriptor.getFixes collectFirst {
-        case f: LocalQuickFix => f
-      } map { fix => () =>
-        applySmartFix(fix, descriptor, project)
-      }
-    }
-    if (actions.isEmpty) None
-    else {
-      val fixAction = actions.reduce((acc, f) => () => { acc(); f() })
-      Some(Fix(fixAction))
-    }
-  }
 }
 
 object DefaultInspection {
 
   implicit class SelfTargetingIntentionOps(val intention: SelfTargetingIntention[PsiElement]) {
     def getTargetByOffset(offset: Int, file: PsiFile): PsiElement = {
-      val leaf1        = file.findElementAt(offset)
-      val leaf2        = file.findElementAt(offset - 1)
+      val leaf1 = file.findElementAt(offset)
+      val leaf2 = file.findElementAt(offset - 1)
       val commonParent = if (leaf1 != null && leaf2 != null) PsiTreeUtil.findCommonParent(leaf1, leaf2) else null
 
       val elementsToCheck = mutable.ListBuffer.empty[PsiElement]
@@ -108,7 +112,6 @@ object DefaultInspection {
       }
       null
     }
-
   }
 
 }

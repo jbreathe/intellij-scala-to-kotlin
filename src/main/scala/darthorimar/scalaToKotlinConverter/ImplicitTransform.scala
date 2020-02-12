@@ -3,10 +3,10 @@ package darthorimar.scalaToKotlinConverter
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.source.JavaDummyHolder
 import org.jetbrains.plugins.scala.extensions.{FirstChild, ImplicitConversion}
-import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.api.base.patterns.ScReferencePattern
 import org.jetbrains.plugins.scala.lang.psi.api.expr.ScReferenceExpression
 import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
+import org.jetbrains.plugins.scala.lang.psi.api.{ScalaFile, ScalaPsiElement}
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaCode._
 import org.jetbrains.plugins.scala.lang.transformation.{AbstractTransformer, bindTo, qualifiedNameOf}
 import org.jetbrains.plugins.scala.project.ProjectContext
@@ -28,5 +28,4 @@ class ImplicitTransform extends AbstractTransformer {
       f.getPackageName == "scala" || f.getName == "Predef.scala"
     case _ => false
   }
-
 }

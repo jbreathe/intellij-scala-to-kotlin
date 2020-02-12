@@ -78,22 +78,21 @@ internal class ConvertFileAction<InternalRepresentation, ConverterState>(private
         val project: Project = e.project ?: return
         val selectedFiles: List<PsiFile> = getSelectedFiles(e.dataContext) ?: return
         for (file in selectedFiles) {
-            convertFile(file, project)?: showError("Can not convert file ${file.name}", project)
+            convertFile(file, project) ?: showError("Can not convert file ${file.name}", project)
         }
     }
 
     private fun convertFile(file: PsiFile, project: Project): PsiFile? =
-        converter.runConverterCommand(project) {
-            val (internalRepresentation, state) =
-                    converter.convertPsiElementToInternalRepresentation(file) ?: return@runConverterCommand null
-            val (text, newState) =
-                    converter.convertInternalRepresentationToText(internalRepresentation, state, project)
-                            ?: return@runConverterCommand null
-            val newFile = replaceFileContent(text, file, project) ?: return@runConverterCommand null
-            converter.runPostProcessOperations(newFile, newState)
-            newFile
-        }
-
+            converter.runConverterCommand(project) {
+                val (internalRepresentation, state) =
+                        converter.convertPsiElementToInternalRepresentation(file) ?: return@runConverterCommand null
+                val (text, newState) =
+                        converter.convertInternalRepresentationToText(internalRepresentation, state, project)
+                                ?: return@runConverterCommand null
+                val newFile = replaceFileContent(text, file, project) ?: return@runConverterCommand null
+                converter.runPostProcessOperations(newFile, newState)
+                newFile
+            }
 
     companion object {
         const val ACTION_PREFIX = "ConvertLanguageAction"

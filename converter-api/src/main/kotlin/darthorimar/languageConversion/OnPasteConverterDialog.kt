@@ -2,8 +2,10 @@ package darthorimar.languageConversion
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-
-import javax.swing.*
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
 
 internal class OnPasteConverterDialog(converter: LanguageConverterExtension<*, *>,
                                       project: Project) : DialogWrapper(project, true) {
