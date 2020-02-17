@@ -22,7 +22,7 @@ allprojects {
         version = "IC-2019.1"
         setPlugins("Kotlin", "org.intellij.scala:2019.1.9")
     }
-    version = "0.1.1"
+    version = "2019.1.0"
 }
 
 

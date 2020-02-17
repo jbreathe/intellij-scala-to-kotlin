@@ -3,7 +3,7 @@
 
 IntelliJ IDEA plugin which converts your Scala code to a Kotlin one
 
-Available at [Jetbrains Plugin Repo](https://plugins.jetbrains.com/plugin/11103-scala-to-kotlin-converter)
+Available at [Jetbrains Plugin Repo](https://plugins.jetbrains.com/plugin/13680-scala-to-kotlin-converter)
 
 
 
